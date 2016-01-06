@@ -21,7 +21,7 @@ index e21f849..8b96189 100644
 +  theOSystem->colourPalette().applyPaletteGrayscale(&grayscale_output_buffer[0], ale_screen_data, screen_size);
 +}
 diff --git a/src/ale_interface.hpp b/src/ale_interface.hpp
-index 0875bc2..17c5f0f 100644
+index 0875bc2..d21c0bd 100644
 --- a/src/ale_interface.hpp
 +++ b/src/ale_interface.hpp
 @@ -140,6 +140,13 @@ public:
@@ -29,10 +29,10 @@ index 0875bc2..17c5f0f 100644
    ScreenExporter *createScreenExporter(const std::string &path) const;
  
 +
-+  //This method should receive an array of length 3 x width x height                
-+  //This method should receive an array of length width x height                    
-+  //(generally 160 x 210 = 33,600) and then it will fill this array                 
-+  //with the grayscale colours                                                      
++  //This method should receive an array of length 3 x width x height
++  //This method should receive an array of length width x height
++  //(generally 160 x 210 = 33,600) and then it will fill this array
++  //with the grayscale colours
 +  void getScreenGrayscale(std::vector<pixel_t>& grayscale_output_buffer);
 +
   public:
