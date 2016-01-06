@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
   }
 
   fast_dqn::EnvironmentSp environmentSp =
-    fast_dqn::CreateEnvironment(argc, argv, "/home/trevor/Documents/dev/ml/research/reinforcement/minecraft_dqn_interface/"); //FLAGS_gui, FLAGS_rom);
+    fast_dqn::CreateEnvironment(argc, argv, "dependencies/minecraft_dqn_interface/"); //FLAGS_gui, FLAGS_rom);
 
   // Get the vector of legal actions
   const fast_dqn::Environment::ActionVec legal_actions = 
