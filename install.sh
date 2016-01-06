@@ -12,8 +12,12 @@ sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev
 echo "Downloading compatible CAFFE distribution"
 wget http://tpbarron.github.io/sources/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
 cd dependencies/caffe/
-tar xfz distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
-gunzip -r distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3
+tar zxvf distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
+cd ../../
+
+wget http://tpbarron.github.io/sources/distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
+cd dependencies/caffe/
+tar zxvf distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
 cd ../../
 
 # download and make minecraft interface
@@ -35,4 +39,4 @@ cmake .. && make
 cd ../
 
 echo "Finished install"
-echo "Run with ./build/fast_dqn
+echo "Run with ./build/fast_dqn"
