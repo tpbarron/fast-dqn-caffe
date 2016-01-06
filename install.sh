@@ -10,10 +10,18 @@ sudo apt-get install --no-install-recommends libboost-all-dev
 sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev
 
 echo "Downloading compatible Caffe distribution"
+# gpu capable version
 wget http://tpbarron.github.io/sources/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
 cd dependencies/caffe/
-tar xfz distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
-gunzip -r distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3
+#tar zxvf distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
+tar zxf distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
+cd ../../
+
+# cpu capable version
+wget http://tpbarron.github.io/sources/distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
+cd dependencies/caffe/
+#tar zxvf distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
+tar zxf distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
 cd ../../
 
 # download and make minecraft interface
