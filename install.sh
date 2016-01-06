@@ -12,7 +12,7 @@ sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev
 echo "Downloading compatible CAFFE distribution"
 wget http://tpbarron.github.io/sources/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
 cd dependencies/caffe/
-tar xvfz distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
+tar xfz distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
 gunzip -r distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3
 cd ../../
 
@@ -27,9 +27,10 @@ mkdir build && cd build
 cmake .. && make
 cd ../../../
 
-# make fast-dqn 
-echo "Building dqn"
-mkdir build && cd build
+# make fast-dqn
+echo "Building DQN"
+# create build dir if not exists and clean
+mkdir -p build && cd build && rm -rf *
 cmake .. && make
 cd ../
 
