@@ -1,17 +1,16 @@
 cmake_minimum_required (VERSION 2.6)
 project(fast_dqn)
 
-option(CAFFE_CPU_ONLY "Use CPU only for Caffe" OFF)
-option(USE_SDL "Use SDL for ALE" ON)
+option(CAFFE_CPU_ONLY "Use CPU only for Caffe" ON)
 
-# Edit these paths to point to your caffe & ALE installations
+# Edit these paths to point to your caffe & minecraft installations
 # when building caffe be sure and do "make distribute"
-set(ALE_ROOT_DIR "~/dev/Arcade-Learning-Environment")
-set(CAFFE_ROOT_DIR "~/dev/caffe")
-list(APPEND CMAKE_PREFIX_PATH ${ALE_ROOT_DIR} ${CAFFE_ROOT_DIR})
+set(CAFFE_ROOT_DIR "/home/trevor/Documents/dev/ml/caffe_old")
+set(MINECRAFT_ROOT_DIR "/home/trevor/Documents/dev/ml/research/reinforcement/minecraft_dqn_interface")
 
-add_executable(fast_dqn src/fast_dqn_main.cpp src/fast_dqn.cpp 
-  src/ale_environment.cpp)
+list(APPEND CMAKE_PREFIX_PATH ${CAFFE_ROOT_DIR} ${MINECRAFT_ROOT_DIR})
+
+add_executable(fast_dqn src/fast_dqn_main.cpp src/fast_dqn.cpp src/minecraft_environment.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -Wno-deprecated-declarations")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
@@ -36,21 +35,23 @@ find_package(CAFFE REQUIRED)
 include_directories(${CAFFE_INCLUDE_DIRS})
 target_link_libraries(fast_dqn ${CAFFE_LIBRARIES})
 
-find_package(ALE REQUIRED)
-include_directories(${ALE_INCLUDE_DIRS})
-target_link_libraries(fast_dqn ${ALE_LIBRARIES})
+find_package(MINECRAFT REQUIRED)
+include_directories(${MINECRAFT_INCLUDE_DIRS})
+target_link_libraries(fast_dqn ${MINECRAFT_LIBRARIES})
+
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
+target_link_libraries(fast_dqn ${PYTHON_LIBRARIES})
+
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+target_link_libraries(fast_dqn ${OpenCV_LIBS})
 
 find_package(HDF5 COMPONENTS HL QUIET)
 include_directories(SYSTEM ${HDF5_INCLUDE_DIRS} ${HDF5_HL_INCLUDE_DIR})
 list(APPEND LINK_LIBS ${HDF5_LIBRARIES})
 
-if(USE_SDL)
-  find_package(SDL REQUIRED)
-  add_definitions(-D__USE_SDL)
-  include_directories(${SDL_INCLUDE_DIR})
-  target_link_libraries(fast_dqn ${SDL_LIBRARY} ${SDL_MAIN_LIBRARY})
-endif()
 
-if(CPU_ONLY)
+if(CAFFE_CPU_ONLY)
   add_definitions(-DCPU_ONLY)
 endif()

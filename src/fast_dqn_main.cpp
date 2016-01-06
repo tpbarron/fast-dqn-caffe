@@ -1,6 +1,6 @@
 #include "fast_dqn.h"
 #include "environment.h"
-#include <ale_interface.hpp>
+#include <minecraft_dqn_interface.cpp>
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 #include <cmath>
@@ -9,7 +9,7 @@
 #include <algorithm>
 
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(gpu, true, "Use GPU to brew Caffe");
+DEFINE_bool(gpu, false, "Use GPU to brew Caffe");
 DEFINE_bool(gui, false, "Open a GUI window");
 DEFINE_string(rom, "breakout.bin", "Atari 2600 ROM to play");
 DEFINE_string(solver, "models/fast_dqn_solver.prototxt", "Solver parameter"
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
   }
 
   fast_dqn::EnvironmentSp environmentSp =
-    fast_dqn::CreateEnvironment(FLAGS_gui, FLAGS_rom);
+    fast_dqn::CreateEnvironment(argc, argv, "/home/trevor/Documents/dev/ml/research/reinforcement/minecraft_dqn_interface/"); //FLAGS_gui, FLAGS_rom);
 
   // Get the vector of legal actions
   const fast_dqn::Environment::ActionVec legal_actions = 

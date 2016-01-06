@@ -1,6 +1,5 @@
 #include "environment.h"
 #include <ale_interface.hpp>
-#include <ale_interface.hpp>
 #include <glog/logging.h>
 #include <iostream>
 #include <vector>
