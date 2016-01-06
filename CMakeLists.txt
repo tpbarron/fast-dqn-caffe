@@ -5,8 +5,8 @@ option(CAFFE_CPU_ONLY "Use CPU only for Caffe" ON)
 
 # Edit these paths to point to your caffe & minecraft installations
 # when building caffe be sure and do "make distribute"
-set(CAFFE_ROOT_DIR "/home/trevor/Documents/dev/ml/caffe_old")
-set(MINECRAFT_ROOT_DIR "/home/trevor/Documents/dev/ml/research/reinforcement/minecraft_dqn_interface")
+set(CAFFE_ROOT_DIR "dependencies/caffe/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3")
+set(MINECRAFT_ROOT_DIR "dependencies/minecraft_dqn_interface")
 
 list(APPEND CMAKE_PREFIX_PATH ${CAFFE_ROOT_DIR} ${MINECRAFT_ROOT_DIR})
 
