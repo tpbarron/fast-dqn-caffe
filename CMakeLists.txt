@@ -7,6 +7,9 @@ option(CAFFE_CPU_ONLY "Use CPU only for Caffe" ON)
 # when building caffe be sure and do "make distribute"
 set(CAFFE_ROOT_DIR "dependencies/caffe/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3")
 set(MINECRAFT_ROOT_DIR "dependencies/minecraft_dqn_interface")
+set(CUDA_ROOT_DIR "/usr/local/cuda")
+
+list(APPEND CMAKE_PREFIX_PATH ${ALE_ROOT_DIR} ${CAFFE_ROOT_DIR})
 
 list(APPEND CMAKE_PREFIX_PATH ${CAFFE_ROOT_DIR} ${MINECRAFT_ROOT_DIR})
 
@@ -54,4 +57,6 @@ list(APPEND LINK_LIBS ${HDF5_LIBRARIES})
 
 if(CAFFE_CPU_ONLY)
   add_definitions(-DCPU_ONLY)
+else()
+  include_directories(${CUDA_ROOT_DIR}/include)
 endif()
