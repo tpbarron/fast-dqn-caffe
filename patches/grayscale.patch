@@ -1,0 +1,40 @@
+diff --git a/src/ale_interface.cpp b/src/ale_interface.cpp
+index e21f849..8b96189 100644
+--- a/src/ale_interface.cpp
++++ b/src/ale_interface.cpp
+@@ -291,3 +291,17 @@ void ALEInterface::saveScreenPNG(const string& filename) {
+ ScreenExporter *ALEInterface::createScreenExporter(const std::string &filename) const {
+     return new ScreenExporter(theOSystem->colourPalette(), filename); 
+ }
++
++
++//This method should receive an array of length width x height
++//(generally 160 x 210 = 33,600) and then it will fill this array
++//with the grayscale colours
++void ALEInterface::getScreenGrayscale(std::vector<pixel_t>& grayscale_output_buffer){
++  size_t w = environment->getScreen().width();
++  size_t h = environment->getScreen().height();
++  size_t screen_size = w*h;
++  assert(grayscale_output_buffer.size() >= screen_size);
++  pixel_t *ale_screen_data = environment->getScreen().getArray();
++
++  theOSystem->colourPalette().applyPaletteGrayscale(&grayscale_output_buffer[0], ale_screen_data, screen_size);
++}
+diff --git a/src/ale_interface.hpp b/src/ale_interface.hpp
+index 0875bc2..17c5f0f 100644
+--- a/src/ale_interface.hpp
++++ b/src/ale_interface.hpp
+@@ -140,6 +140,13 @@ public:
+   // to exists. 
+   ScreenExporter *createScreenExporter(const std::string &path) const;
+ 
++
++  //This method should receive an array of length 3 x width x height                
++  //This method should receive an array of length width x height                    
++  //(generally 160 x 210 = 33,600) and then it will fill this array                 
++  //with the grayscale colours                                                      
++  void getScreenGrayscale(std::vector<pixel_t>& grayscale_output_buffer);
++
+  public:
+   std::auto_ptr<OSystem> theOSystem;
+   std::auto_ptr<Settings> theSettings;

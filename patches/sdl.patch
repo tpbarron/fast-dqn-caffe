@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2504ff1..ab056f0 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,7 +1,7 @@
+ cmake_minimum_required (VERSION 2.6)
+ project(ale)
+ 
+-option(USE_SDL "Use SDL" OFF)
++option(USE_SDL "Use SDL" ON)
+ option(USE_RLGLUE "Use RL-Glue" OFF)
+ option(BUILD_EXAMPLES "Build Example Agents" ON)
+ 
