@@ -43,4 +43,4 @@ def plot_chart(chart_type, path_to_png, log_file):
 
 if __name__ == '__main__':
     while True:
-        plot_chart(0, 'tran_progress.png', 'training_log.csv')
+        plot_chart(0, 'train_progress.png', 'training_log.csv')
