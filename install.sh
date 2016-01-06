@@ -19,9 +19,7 @@ mkdir build && cd build
 cmake .. && make
 cd ../../../
 
-# make fast-dqn 
-echo "Switching to minecraft branch"
-git checkout minecraft
+# make fast-dqn
 echo "Building DQN"
 # create build dir if not exists and clean
 mkdir -p build && cd build && rm -rf *
