@@ -12,17 +12,17 @@ sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev
 echo "Downloading compatible CAFFE distribution"
 wget http://tpbarron.github.io/sources/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
 cd dependencies/caffe/
-tar zxvf distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
+tar zxf distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
 cd ../../
 
 wget http://tpbarron.github.io/sources/distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
 cd dependencies/caffe/
-tar zxvf distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
+tar zxf distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
 cd ../../
 
 # download and make minecraft interface
 echo "Installing dependencies for minecraft interface"
-sudo apt-get install python-dev
+sudo apt-get install python-dev python-pyglet
 
 echo "Downloading and building minecraft interface"
 git clone https://github.com/tpbarron/minecraft_dqn_interface.git dependencies/minecraft_dqn_interface
