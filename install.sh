@@ -8,7 +8,11 @@ echo "Downloading compatible CAFFE distribution"
 wget http://tpbarron.github.io/sources/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
 cd dependencies/caffe/
 tar xfz distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
-gunzip -r distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3
+cd ../../
+# caffe distribution with recurrent 
+wget http://tpbarron.github.io/sources/distribute_recurrent_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz --directory-prefix=dependencies/caffe
+cd dependencies/caffe/
+tar xfz distribute_recurrent_ff16f6e43dd718921e5203f640dd57c68f01cdb3.tar.gz
 cd ../../
 
 # download and make minecraft interface
@@ -31,6 +35,13 @@ echo "Building DQN"
 mkdir -p build && cd build && rm -rf *
 cmake .. && make
 cd ../
+
+# for the plotting script
+echo "Installing dependencies for plotting script"
+sudo apt-get install python-dateutil
+sudo apt-get install python-pyparsing
+sudo pip install matplotlib==1.5
+sudo apt-get install python-numpy
 
 echo "Finished install"
 echo "Run with ./build/fast_dqn"
