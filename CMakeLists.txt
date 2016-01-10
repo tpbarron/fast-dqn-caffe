@@ -1,13 +1,17 @@
 cmake_minimum_required (VERSION 2.6)
 project(fast_dqn)
 
-option(CAFFE_CPU_ONLY "Use CPU only for Caffe" OFF)
+option(CAFFE_CPU_ONLY "Use CPU only for Caffe" ON)
 option(USE_SDL "Use SDL for ALE" ON)
 
 # Edit these paths to point to your caffe & ALE installations
 # when building caffe be sure and do "make distribute"
 set(ALE_ROOT_DIR "dependencies/Arcade-Learning-Environment")
-set(CAFFE_ROOT_DIR "dependencies/caffe/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3")
+if (CAFFE_CPU_ONLY)
+  set(CAFFE_ROOT_DIR "dependencies/caffe/distribute_cpu_ff16f6e43dd718921e5203f640dd57c68f01cdb3")
+else() 
+  set(CAFFE_ROOT_DIR "dependencies/caffe/distribute_ff16f6e43dd718921e5203f640dd57c68f01cdb3")
+endif()
 set(CUDA_ROOT_DIR "/usr/local/cuda")
 
 list(APPEND CMAKE_PREFIX_PATH ${ALE_ROOT_DIR} ${CAFFE_ROOT_DIR})
