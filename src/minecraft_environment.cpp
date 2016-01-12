@@ -58,21 +58,21 @@ public:
    */
   double ActNoop() {
     double reward = 0;
-    for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
+    //for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
       //std::cout << "actnoop, i = " << i << std::endl;
       // TODO: Should this be an int or some type of action object?
       // Temporarility 0 will always be No-op
       reward += me_.act(0);
-    }
+    //}
     return reward;
   }
 
   double Act(int action) {
     double reward = 0;
-    for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
+    //for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
       // TODO: action type?
       reward += me_.act(action);
-    }
+    //}
     //std::cout << "Reward: " << reward << std::endl;
     return reward;
   }
