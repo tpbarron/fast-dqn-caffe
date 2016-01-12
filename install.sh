@@ -33,8 +33,8 @@ echo "Downloading and building ALE"
 git clone https://github.com/mgbellemare/Arcade-Learning-Environment.git dependencies/Arcade-Learning-Environment
 cd dependencies/Arcade-Learning-Environment/
 # apply patch for grayscale images and SDL
-echo "Applying grayscale patch"
-git apply ../../patches/grayscale.patch
+#echo "Applying grayscale patch"
+#git apply ../../patches/grayscale.patch
 echo "Applying SDL patch for build"
 git apply ../../patches/sdl.patch
 echo "Building ALE"
