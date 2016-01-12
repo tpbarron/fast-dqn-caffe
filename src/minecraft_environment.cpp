@@ -31,6 +31,13 @@ public:
    * the minecraft game
    */
   FrameDataSp PreprocessScreen() {
+    /**
+     * Uncomment the foloowing line and comment the remainder of the method
+     * to get the screen as an array from the minecraft interface. For some
+     * reason this causes an error on the action on the following step.
+     */
+    // return me_.get_screen_as_array();
+    
     cv::Mat raw_screen = me_.get_screen();
     assert(raw_screen.cols == kCroppedFrameSize);
     assert(raw_screen.rows == kCroppedFrameSize);
@@ -41,6 +48,7 @@ public:
         (*screen)[i * kCroppedFrameSize + j] = raw_screen.at<uchar>(i, j); //resulting_color;
       }
     }
+    
     return screen;
   }
 
@@ -51,6 +59,7 @@ public:
   double ActNoop() {
     double reward = 0;
     for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
+      //std::cout << "actnoop, i = " << i << std::endl;
       // TODO: Should this be an int or some type of action object?
       // Temporarility 0 will always be No-op
       reward += me_.act(0);
