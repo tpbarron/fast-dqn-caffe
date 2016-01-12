@@ -38,5 +38,12 @@ mkdir -p build && cd build && rm -rf *
 cmake .. && make
 cd ../
 
+# for the plotting script
+echo "Installing dependencies for plotting script"
+sudo apt-get install python-dateutil
+sudo apt-get install python-pyparsing
+sudo pip install matplotlib==1.5
+sudo apt-get install python-numpy
+
 echo "Finished install"
 echo "Run with ./build/fast_dqn"
