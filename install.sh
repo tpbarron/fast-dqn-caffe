@@ -22,7 +22,8 @@ cd ../../
 
 # download and make minecraft interface
 echo "Installing dependencies for minecraft interface"
-sudo apt-get install python-dev python-pyglet
+sudo apt-get install python-dev
+sudo pip install pyglet
 
 echo "Downloading and building minecraft interface"
 git clone https://github.com/tpbarron/minecraft_dqn_interface.git dependencies/minecraft_dqn_interface
