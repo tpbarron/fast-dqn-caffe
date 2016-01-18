@@ -18,7 +18,7 @@ public:
     ActionVec av = me_.get_action_set();
     for (int i=0; i < av.size(); i++) {
       legal_actions_.push_back(av[i]);
-      //std::cout << "action " << i << " = " << av[i] << std::endl;
+      std::cout << "action[" << i << "] = " << av[i] << std::endl;
     }
   }
 
@@ -36,16 +36,32 @@ public:
      * to get the screen as an array from the minecraft interface. For some
      * reason this causes an error on the action on the following step.
      */
-    // return me_.get_screen_as_array();
+    //return me_.get_screen_as_array();
     
     cv::Mat raw_screen = me_.get_screen();
+    
+    /*me_.get_screen(); // get screen so that game steps but don't use information
+
+    cv::Mat raw_screen;
+    raw_screen = cv::imread("frame.png", CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+
+    if(!raw_screen.data) {                              // Check for invalid input
+      std::cout <<  "Could not open or find the image" << std::endl ;
+      exit(1);
+    }
+    */
+    /*
+    cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
+    cv::imshow( "Display window", raw_screen);                   // Show our image inside it.
+    cv::waitKey(0);*/
+
     assert(raw_screen.cols == kCroppedFrameSize);
     assert(raw_screen.rows == kCroppedFrameSize);
   
     auto screen = std::make_shared<FrameData>();
     for (auto i = 0; i < kCroppedFrameSize; ++i) {
       for (auto j = 0; j < kCroppedFrameSize; ++j) {
-        (*screen)[i * kCroppedFrameSize + j] = raw_screen.at<uchar>(i, j); //resulting_color;
+        (*screen)[i * kCroppedFrameSize + j] = raw_screen.at<uint8_t>(i, j); //resulting_color;
       }
     }
     
@@ -58,22 +74,22 @@ public:
    */
   double ActNoop() {
     double reward = 0;
-    //for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
+    for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
       //std::cout << "actnoop, i = " << i << std::endl;
       // TODO: Should this be an int or some type of action object?
       // Temporarility 0 will always be No-op
       reward += me_.act(0);
-    //}
+    }
     return reward;
   }
 
   double Act(int action) {
     double reward = 0;
-    //for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
+    for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
       // TODO: action type?
       reward += me_.act(action);
-    //}
-    //std::cout << "Reward: " << reward << std::endl;
+    }
+    //std::cout << "Minecraft env reward: " << reward << std::endl;
     return reward;
   }
 

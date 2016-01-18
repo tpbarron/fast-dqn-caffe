@@ -98,7 +98,7 @@ walkway_2xoriginal_winding_acts7_length10:
   * Path type: winding
   * Path length: 10 units
   * Number of actions: 7
-  * Network structure: Original DeepMind
+  * Network structure: Original DeepMind with the number of outputs at each layer doubled
   * Gradients clipped at 10
   * Successful: ?
 
