@@ -1,6 +1,6 @@
 NOTE: original means that test uses the original network structure that DeepMind used
 
-walkway_original:
+00_walkway_original:
   * Train on 100 unit long snaking walkway with original 7 actions, bad results
   * Path type: winding
   * Path length: 100 units
@@ -8,7 +8,7 @@ walkway_original:
   * Network structure: Original DeepMind
   * Successful: NO
   
-walkway_original2:
+01_walkway_original:
   * Tried with 10 unit straight walkway
   * Path type: straight
   * Path length: 10 units
@@ -16,7 +16,7 @@ walkway_original2:
   * Network structure: Original DeepMind
   * Successful: NO
   
-walkway_original3_fixedz
+02_walkway_original_fixedz
   * I realized I was rewarding for going in the wrong direction. Going away is negative z.
   * Path type: straight
   * Path length: 10 units
@@ -24,7 +24,7 @@ walkway_original3_fixedz
   * Network structure: Original DeepMind
   * Successful: NO
   
-walkway_original4_3acts
+03_walkway_original_3acts
   * Retested previous setup with only 3 actions for simplicity (no-op, forward, backward).
   * Path type: straight
   * Path length: 10 units
@@ -32,7 +32,7 @@ walkway_original4_3acts
   * Network structure: Original DeepMind
   * Successful: NO
   
-walkway_original_static_input:
+04_walkway_original_static_input:
   * Tried feeding a single walkway pic to ensure passing in images was not the issue
   * Path type: straight
   * Path length: 10 units
@@ -40,7 +40,7 @@ walkway_original_static_input:
   * Network structure: Original DeepMind
   * Successful: NO
   
-walkway_original_static_input_immediate_act:
+05_walkway_original_static_input_immediate_act:
   * Realized that the Player.performAction method was setting the action but not updating the game state before evaluating the result
   * Tested giving a reward based on whether the action specified moving forward or not instead of whether the player had moved by that time.
   * Still used a static frame as input
@@ -50,7 +50,7 @@ walkway_original_static_input_immediate_act:
   * Network structure: Original DeepMind
   * Successful: YES
   
-walkway_original_live_input_immediate_act:
+06_walkway_original_live_input_immediate_act:
   * Re-added images from the game instead of a static frame
   * Everything else was the same as the previous 
   * Path type: straight
@@ -59,7 +59,7 @@ walkway_original_live_input_immediate_act:
   * Network structure: Original DeepMind
   * Successful: YES
   
-walkway_original_live_input_fixed_update:
+07_walkway_original_live_input_fixed_update:
   * Same as previous but re-organized code to apply the action before evaluating the reward
   * Path type: straight
   * Path length: 10 units
@@ -67,7 +67,7 @@ walkway_original_live_input_fixed_update:
   * Network structure: Original DeepMind
   * Successful: YES
 
-walkway_original_live_input_fixed_update_full_acts:
+08_walkway_original_live_input_fixed_update_full_acts:
   * Same as previous but re-added original 7 actions
   * Path type: straight
   * Path length: 10 units
@@ -75,15 +75,16 @@ walkway_original_live_input_fixed_update_full_acts:
   * Network structure: Original DeepMind
   * Successful: YES
   
-walkway_original_live_input_fixed_update_full_acts_100length:
+09_walkway_original_live_input_fixed_update_full_acts_100length:
   * Same as previous but increased straight walkway length to 100 units
   * Path type: straight
   * Path length: 10 units
   * Number of actions: 7
   * Network structure: Original DeepMind
   * Successful: YES
-  
-walkway_original_winding_acts7_length10:
+
+
+10_walkway_original_winding_acts7_length10:
   * Back to original experiment. Winding walkway of length 10
   * Path type: winding
   * Path length: 10 units
@@ -92,6 +93,11 @@ walkway_original_winding_acts7_length10:
   * Gradients clipped at 20
   * Successful: moderate
   
+
+--------------
+- TESTS TODO -
+--------------
+  
 walkway_2xoriginal_winding_acts7_length10:
   * Back to original experiment. Winding walkway of length 10
   * Doubled the number of nodes in each layer
@@ -99,6 +105,35 @@ walkway_2xoriginal_winding_acts7_length10:
   * Path length: 10 units
   * Number of actions: 7
   * Network structure: Original DeepMind with the number of outputs at each layer doubled
+  * Gradients clipped at 10
+  * Successful: ?
+
+
+walkway_original_winding_acts7_length10:
+  * Back to original experiment. Winding walkway of length 10
+  * Path type: winding
+  * Path length: 10 units
+  * Number of actions: 7
+  * Network structure: Original DeepMind
+  * Gradients clipped at 10
+  * Successful: ?
+ 
+
+walkway_original_noclipping_winding_acts7_length10:
+  * Back to original experiment. Winding walkway of length 10
+  * Path type: winding
+  * Path length: 10 units
+  * Number of actions: 7
+  * Network structure: Original DeepMind
+  * No clipping
+  * Successful: ?
+  
+walkway_3rdconv_winding_acts7_length10:
+  * Back to original experiment. Winding walkway of length 10
+  * Path type: winding
+  * Path length: 10 units
+  * Number of actions: 7
+  * Network structure: Original DeepMind
   * Gradients clipped at 10
   * Successful: ?
 
