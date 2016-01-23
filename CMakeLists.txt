@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 project(fast_dqn)
 
-option(CAFFE_CPU_ONLY "Use CPU only for Caffe" ON)
+option(CAFFE_CPU_ONLY "Use CPU only for Caffe" OFF)
 
 # Edit these paths to point to your caffe & minecraft installations
 # when building caffe be sure and do "make distribute"
@@ -13,7 +13,6 @@ endif()
 set(MINECRAFT_ROOT_DIR "dependencies/minecraft_dqn_interface")
 set(CUDA_ROOT_DIR "/usr/local/cuda")
 
-list(APPEND CMAKE_PREFIX_PATH ${ALE_ROOT_DIR} ${CAFFE_ROOT_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CAFFE_ROOT_DIR} ${MINECRAFT_ROOT_DIR})
 
 add_executable(fast_dqn src/fast_dqn_main.cpp src/fast_dqn.cpp src/minecraft_environment.cpp)

@@ -9,7 +9,8 @@
 #include <algorithm>
 
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(gpu, false, "Use GPU to brew Caffe");
+DEFINE_bool(gpu, true, "Use GPU to brew Caffe");
+DEFINE_int32(device, -1, "Which GPU to use");
 DEFINE_bool(gui, false, "Open a GUI window");
 DEFINE_string(rom, "breakout.bin", "Atari 2600 ROM to play");
 DEFINE_string(solver, "models/fast_dqn_solver.prototxt", "Solver parameter"
@@ -107,6 +108,9 @@ int main(int argc, char** argv) {
 
   if (FLAGS_gpu) {
     caffe::Caffe::set_mode(caffe::Caffe::GPU);
+    if (FLAGS_device >= 0) {
+      caffe::Caffe::SetDevice(FLAGS_device);
+    }
   } else {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
