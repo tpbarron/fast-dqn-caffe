@@ -24,7 +24,7 @@ constexpr auto kInputDataSize = kCroppedFrameDataSize * kInputFrameCount;
 constexpr auto kMinibatchSize = 32;
 constexpr auto kMinibatchDataSize = kInputDataSize * kMinibatchSize;
 constexpr auto kGamma = 0.95f;
-constexpr auto kOutputCount = 18;
+constexpr auto kOutputCount = 7;
 
 constexpr auto frames_layer_name = "frames_input_layer";
 constexpr auto target_layer_name = "target_input_layer";

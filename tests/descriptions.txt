@@ -84,7 +84,7 @@ NOTE: original means that test uses the original network structure that DeepMind
   * Successful: YES
 
 
-10_walkway_original_winding_acts7_length10:
+10_walkway_original256ip_winding_acts7_length10:
   * Back to original experiment. Winding walkway of length 10
   * Path type: winding
   * Path length: 10 units
@@ -92,7 +92,16 @@ NOTE: original means that test uses the original network structure that DeepMind
   * Network structure: Original DeepMind
   * Gradients clipped at 20
   * Successful: moderate
-  
+
+
+11_walkway_original512ip_winding_acts7_length10:
+  * Back to original experiment. Winding walkway of length 10
+  * Path type: winding
+  * Path length: 10 units
+  * Number of actions: 7
+  * Network structure: Original DeepMind
+  * Gradients clipped at 10
+  * Successful: moderate
 
 --------------
 - TESTS TODO -
