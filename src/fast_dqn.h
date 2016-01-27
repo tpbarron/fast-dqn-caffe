@@ -181,6 +181,8 @@ class Fast_DQN {
       const TargetLayerInputData& target_data,
       const FilterLayerInputData& filter_data);
 
+  void PrintNetwork();
+
   EnvironmentSp environmentSp_;
   const Environment::ActionVec legal_actions_;
   const int replay_memory_capacity_;

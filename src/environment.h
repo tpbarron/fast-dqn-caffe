@@ -48,7 +48,10 @@ class Environment {
 
 // Factory method
 EnvironmentSp CreateEnvironment(bool gui, const std::string rom_path);
-EnvironmentSp CreateEnvironment(int argc, char *argv[], const std::string path);
+EnvironmentSp CreateEnvironment(int argc,
+				char *argv[],
+				const std::string path,
+				bool evaluate);
 
 }  // namespace fast_dqn
 #endif  // SRC_ENVIRONMENT_H_

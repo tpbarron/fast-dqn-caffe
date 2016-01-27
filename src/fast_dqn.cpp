@@ -69,6 +69,7 @@ void HasBlobSize(caffe::Net<Dtype>& net,
 
 void Fast_DQN::LoadTrainedModel(const std::string& model_bin) {
   net_->CopyTrainedLayersFrom(model_bin);
+  //PrintNetwork();
 }
 
 void Fast_DQN::Initialize() {
@@ -178,7 +179,7 @@ std::vector<ActionValue> Fast_DQN::SelectActionGreedily(
         q_values.begin(),
         action_evaluator);
 //     if (last_frames_batch.size() == 1) {
-//       std::cout << PrintQValues(q_values, legal_actions_);
+//       std::cout << PrintQValues(environmentSp_, q_values, legal_actions_);
 //     }
 
     // Select the action with the maximum Q value
@@ -338,6 +339,86 @@ void Fast_DQN::InputDataIntoLayers(NetSp net,
                               filter_input_layer->batch_size());
   }
 
+}
+
+
+void Fast_DQN::PrintNetwork() {
+  std::cout << "Layers: " << std::endl;
+  const auto layer_names = net_->layer_names();
+  for (auto it = layer_names.begin(); it != layer_names.end(); ++it) {
+  std::cout << *it << std::endl;
+  }
+  std::cout << std::endl;
+    
+  std::cout << "Blobs: " << std::endl;
+  const auto blob_names = net_->blob_names();
+  for (auto it = blob_names.begin(); it != blob_names.end(); ++it) {
+  std::cout << *it << std::endl;
+  }
+  std::cout << std::endl;
+
+
+  /*
+    std::cout << "filter" << std::endl;
+    auto blob = net_->blob_by_name("filter");
+    std::cout << blob->shape_string() << std::endl;
+    for (int i = 0; i < 32; i++) {
+      for (int j = 0; j < kOutputCount; j++) {
+	std::cout << blob->data_at(i, j, 1, 1) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  
+  
+    std::cout << "ip2" << std::endl;
+  blob = net_->blob_by_name("ip2");
+  std::cout << blob->shape_string() << std::endl;
+  for (int i = 0; i < 32; i++) {
+    for (int j = 0; j < kOutputCound; j++) {
+    std::cout << blob->data_at(i, j, 1, 1) << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+    
+  
+    std::cout << "q values" << std::endl;
+    blob = net_->blob_by_name("q_values");
+    std::cout << blob->shape_string() << std::endl;
+    for (int i = 0; i < 32; i++) {
+      for (int j = 0; j < kOutputCount; j++) {
+	std::cout << blob->data_at(i, j, 1, 1) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+  
+    std::cout << "filtered q values" << std::endl;
+    blob = net_->blob_by_name("filtered_q_values");
+    std::cout << blob->shape_string() << std::endl;
+    for (int i = 0; i < 32; i++) {
+      for (int j = 0; j < kOutputCount; j++) {
+	std::cout << blob->data_at(i, j, 1, 1) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  
+  
+    std::cout << "targets" << std::endl;
+    blob = net_->blob_by_name("target");
+    std::cout << blob->shape_string() << std::endl;
+    for (int i = 0; i < 32; i++) {
+      for (int j = 0; j < kOutputCount; j++) {
+	std::cout << blob->data_at(i, j, 1, 1) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  */
+  
 }
 
 }  // namespace fast_dqn

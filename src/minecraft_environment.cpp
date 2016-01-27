@@ -10,10 +10,10 @@ class MinecraftEnvironment : public Environment {
 
 public:
 
-  MinecraftEnvironment(int argc, char *argv[], const std::string path) :
+  MinecraftEnvironment(int argc, char *argv[], const std::string path, bool evaluate) :
       me_(argc, argv, path) {
     // init the python game
-    me_.init();
+    me_.init(evaluate);
     
     ActionVec av = me_.get_action_set();
     for (int i=0; i < av.size(); i++) {
@@ -37,9 +37,8 @@ public:
      * reason this causes an error on the action on the following step.
      */
     //return me_.get_screen_as_array();
-    
     cv::Mat raw_screen = me_.get_screen();
-    
+
     /*me_.get_screen(); // get screen so that game steps but don't use information
 
     cv::Mat raw_screen;
@@ -53,8 +52,8 @@ public:
     /*
     cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
     cv::imshow( "Display window", raw_screen);                   // Show our image inside it.
-    cv::waitKey(0);*/
-
+    cv::waitKey(0);
+    */
     assert(raw_screen.cols == kCroppedFrameSize);
     assert(raw_screen.rows == kCroppedFrameSize);
   
@@ -117,8 +116,11 @@ public:
   
 };
 
-EnvironmentSp CreateEnvironment(int argc, char *argv[], const std::string path) {
-  return std::make_shared<MinecraftEnvironment>(argc, argv, path);
+EnvironmentSp CreateEnvironment(int argc,
+				char *argv[],
+				const std::string path,
+				bool evaluate) {
+  return std::make_shared<MinecraftEnvironment>(argc, argv, path, evaluate);
 }
 
 }  // namespace fast_dqn
