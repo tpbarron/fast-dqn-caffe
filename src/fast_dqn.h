@@ -15,9 +15,9 @@
 
 namespace fast_dqn {
 
-constexpr auto kRawFrameHeight = 250;
-constexpr auto kRawFrameWidth = 160;
-constexpr auto kCroppedFrameSize = 84;
+//constexpr auto kRawFrameHeight = 250;
+//constexpr auto kRawFrameWidth = 160;
+constexpr auto kCroppedFrameSize = 256;
 constexpr auto kCroppedFrameDataSize = kCroppedFrameSize * kCroppedFrameSize;
 constexpr auto kInputFrameCount = 4;
 constexpr auto kInputDataSize = kCroppedFrameDataSize * kInputFrameCount;

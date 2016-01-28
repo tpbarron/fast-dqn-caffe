@@ -19,7 +19,7 @@ class Environment {
 
   static constexpr auto kRawFrameHeight = 250;
   static constexpr auto kRawFrameWidth = 160;
-  static constexpr auto kCroppedFrameSize = 84;
+  static constexpr auto kCroppedFrameSize = 256;
   static constexpr auto kCroppedFrameDataSize = 
     kCroppedFrameSize * kCroppedFrameSize;
   static constexpr auto kInputFrameCount = 4;

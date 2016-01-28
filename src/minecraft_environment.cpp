@@ -112,7 +112,7 @@ public:
 
  private:
 
-  MinecraftInterface me_;
+  minecraft_interface::MinecraftInterface me_;
   ActionVec legal_actions_;
   
 };
