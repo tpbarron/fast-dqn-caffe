@@ -17,20 +17,18 @@ class Environment {
   typedef std::vector<int> ActionVec;
   typedef int ActionCode;
 
-  static constexpr auto kRawFrameHeight = 250;
-  static constexpr auto kRawFrameWidth = 160;
-  static constexpr auto kCroppedFrameSize = 84;
-  static constexpr auto kCroppedFrameDataSize = 
-    kCroppedFrameSize * kCroppedFrameSize;
-  static constexpr auto kInputFrameCount = 4;
+  static constexpr auto kCroppedVolumeSize = 100;
+  static constexpr auto kCroppedVolumeDataSize = 
+    kCroppedVolumeSize * kCroppedVolumeSize * kCroppedVolumeSize;
+  static constexpr auto kInputVolumeCount = 4;
   static constexpr auto kInputDataSize = 
-    kCroppedFrameDataSize * kInputFrameCount;
+    kCroppedVolumeDataSize * kInputVolumeCount;
 
-  using FrameData = std::array<uint8_t, kCroppedFrameDataSize>;
-  using FrameDataSp = std::shared_ptr<FrameData>;
-  using State = std::array<FrameDataSp, kInputFrameCount>;
+  using VolumeData = std::array<uint8_t, kCroppedVolumeDataSize>;
+  using VolumeDataSp = std::shared_ptr<VolumeData>;
+  using State = std::array<VolumeDataSp, kInputVolumeCount>;
 
-  virtual FrameDataSp PreprocessScreen() = 0;
+  virtual VolumeDataSp PreprocessScreen() = 0;
 
   virtual double ActNoop() = 0;
 

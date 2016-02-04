@@ -30,41 +30,18 @@ public:
    * TODO: this could be made more efficient by directly passing a 1d array from 
    * the minecraft game
    */
-  FrameDataSp PreprocessScreen() {
-    /**
-     * Uncomment the foloowing line and comment the remainder of the method
-     * to get the screen as an array from the minecraft interface. For some
-     * reason this causes an error on the action on the following step.
-     */
-    //return me_.get_screen_as_array();
-    cv::Mat raw_screen = me_.get_screen();
+  VolumeDataSp PreprocessScreen() {
+    std::vector<uint8_t> raw_volume = me_.get_volume();
 
-    /*me_.get_screen(); // get screen so that game steps but don't use information
-
-    cv::Mat raw_screen;
-    raw_screen = cv::imread("frame.png", CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
-
-    if(!raw_screen.data) {                              // Check for invalid input
-      std::cout <<  "Could not open or find the image" << std::endl ;
-      exit(1);
-    }
-    */
-    /*
-    cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
-    cv::imshow( "Display window", raw_screen);                   // Show our image inside it.
-    cv::waitKey(0);
-    */
-    assert(raw_screen.cols == kCroppedFrameSize);
-    assert(raw_screen.rows == kCroppedFrameSize);
+    //assert(raw_screen.cols == kCroppedFrameSize);
+    //assert(raw_screen.rows == kCroppedFrameSize);
   
-    auto screen = std::make_shared<FrameData>();
-    for (auto i = 0; i < kCroppedFrameSize; ++i) {
-      for (auto j = 0; j < kCroppedFrameSize; ++j) {
-        (*screen)[i * kCroppedFrameSize + j] = raw_screen.at<uint8_t>(i, j); //resulting_color;
-      }
+    auto volume = std::make_shared<VolumeData>();
+    for (auto i = 0; i < (int)std::pow(kCroppedVolumeSize, 3.0); ++i) {
+      (*volume)[i] = raw_volume[i]; //resulting_color;
     }
     
-    return screen;
+    return volume;
   }
 
   /**
@@ -73,7 +50,7 @@ public:
    */
   double ActNoop() {
     double reward = 0;
-    for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
+    for (auto i = 0; i < kInputVolumeCount && !me_.is_game_over(); ++i) {
       //std::cout << "actnoop, i = " << i << std::endl;
       // TODO: Should this be an int or some type of action object?
       // Temporarility 0 will always be No-op
@@ -84,7 +61,7 @@ public:
 
   double Act(int action) {
     double reward = 0;
-    for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
+    for (auto i = 0; i < kInputVolumeCount && !me_.is_game_over(); ++i) {
       // TODO: action type?
       reward += me_.act(action);
     }

@@ -11,7 +11,7 @@ display: 1000000
 # you should only see a lot of clip message a the beginning of training
 # for about a second, otherwise occasionally you'll see some if things
 # are working
-#clip_gradients: 10
+clip_gradients: 10
 
 # snapshot intermediate results
 snapshot: 100000

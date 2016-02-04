@@ -2,18 +2,18 @@ name: "Deep Q-Network"
 
 # training input layers
 layer {
-  name: "frames_input_layer"
+  name: "volumes_input_layer"
   type: "MemoryData"
-  top: "frames"
-  top: "dummy_frames"
+  top: "volumes"
+  top: "dummy_volumes"
   include {
     phase: TRAIN
   }
   memory_data_param {
     batch_size: 32
     channels: 4
-    height: 84
-    width: 84
+    height: 1000000
+    width: 1
   }
 }
 layer {
@@ -49,7 +49,7 @@ layer {
 layer {
   name: "silence"
   type: "Silence"
-  bottom: "dummy_frames"
+  bottom: "dummy_volumes"
   bottom: "dummy_filter"
   bottom: "dummy_target"
   include {
@@ -74,34 +74,75 @@ layer {
 
 # test and target input layers
 layer {
-  name: "frames_input_layer"
+  name: "volumes_input_layer"
   type: "MemoryData"
-  top: "all_frames"
-  top: "dummy_frames"
+  top: "all_volumes"
+  top: "dummy_volumes"
   include {
     phase: TEST
   }
   memory_data_param {
     batch_size: 32
     channels: 4
-    height: 84
-    width: 84
+    height: 1000000
+    width: 1
   }
 }
 layer {
   name: "silence"
   type: "Silence"
-  bottom: "dummy_frames"
+  bottom: "dummy_volumes"
   include {
     phase: TEST
   }
 }
 
+
+# reshape volumes input both train and test
+layer {
+  name: "reshape_volume"
+  type: "Reshape"
+  bottom: "volumes"
+  top: "reshaped_volumes"
+  include {
+    phase: TRAIN
+  }
+  reshape_param {
+    shape {
+      dim: 0    # keep 32 batch size
+      dim: 0    # keep 4 channels
+      dim: 100  # set to 100, 100, 100 cube
+      dim: 100
+      dim: 100
+    }
+  }
+}    
+layer {
+  name: "reshape_volume"
+  type: "Reshape"
+  bottom: "all_volumes"
+  top: "reshaped_volumes"
+  include {
+    phase: TEST
+  }
+  reshape_param {
+    shape {
+      dim: 0    # keep 32 batch size
+      dim: 0    # keep 4 channels
+      dim: 100  # set to 100, 100, 100 cube
+      dim: 100
+      dim: 100
+    }
+  }
+}
+
+
+
 # conv layers
 layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "frames"
+  bottom: "reshaped_volumes"
   top: "conv1"
   param {
     name: "conv1_w"
@@ -131,7 +172,7 @@ layer {
 layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "all_frames"
+  bottom: "reshaped_volumes"
   top: "conv1"
   param {
     name: "conv1_w"

@@ -7,10 +7,12 @@
 #include <iostream>
 #include <deque>
 #include <algorithm>
+#include <sys/resource.h>
 
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(gpu, true, "Use GPU to brew Caffe");
+DEFINE_bool(gpu, false, "Use GPU to brew Caffe");
 DEFINE_int32(device, -1, "Which GPU to use");
+DEFINE_int32(stack_size, 1024, "Mb's of stack size");
 DEFINE_bool(gui, false, "Open a GUI window");
 DEFINE_string(rom, "breakout.bin", "Atari 2600 ROM to play");
 DEFINE_string(solver, "models/fast_dqn_solver.prototxt", "Solver parameter"
@@ -48,7 +50,7 @@ double PlayOneEpisode(
     const double epsilon,
     const bool update) {
   assert(!environmentSp->EpisodeOver());
-  std::deque<fast_dqn::FrameDataSp> past_frames;
+  std::deque<fast_dqn::VolumeDataSp> past_frames;
   auto total_score = 0.0;
   for (auto frame = 0; !environmentSp->EpisodeOver(); ++frame) {
     if (FLAGS_verbose)
@@ -58,11 +60,11 @@ double PlayOneEpisode(
 //       std::cout << fast_dqn::DrawFrame(*current_frame);
 //     }
     past_frames.push_back(current_frame);
-    if (past_frames.size() < fast_dqn::kInputFrameCount) {
+    if (past_frames.size() < fast_dqn::kInputVolumeCount) {
       // If there are not past frames enough for DQN input, just select NOOP
       environmentSp->ActNoop();
     } else {
-      if (past_frames.size() > fast_dqn::kInputFrameCount) {
+      if (past_frames.size() > fast_dqn::kInputVolumeCount) {
         past_frames.pop_front();
       }
       fast_dqn::State input_frames;
@@ -100,6 +102,25 @@ double PlayOneEpisode(
   return total_score;
 }
 
+
+void SetStackSize(int mb) {
+  const rlim_t kStackSize = mb * 1024 * 1024;   // min stack size = 16 MB
+  struct rlimit rl;
+  int result;
+
+  result = getrlimit(RLIMIT_STACK, &rl);
+  if (result == 0) {
+    if (rl.rlim_cur < kStackSize) {
+      rl.rlim_cur = kStackSize;
+      result = setrlimit(RLIMIT_STACK, &rl);
+      if (result != 0) {
+        fprintf(stderr, "setrlimit returned result = %d\n", result);
+      }
+    }
+  }
+}
+
+
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
@@ -114,6 +135,9 @@ int main(int argc, char** argv) {
   } else {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
+  
+  // increase default C++ stack size
+  SetStackSize(FLAGS_stack_size);
 
   fast_dqn::EnvironmentSp environmentSp =
     fast_dqn::CreateEnvironment(argc, argv, "dependencies/minecraft_dqn_interface/", FLAGS_evaluate); //FLAGS_gui, FLAGS_rom);

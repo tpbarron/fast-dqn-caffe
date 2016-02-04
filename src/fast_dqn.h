@@ -15,34 +15,32 @@
 
 namespace fast_dqn {
 
-constexpr auto kRawFrameHeight = 250;
-constexpr auto kRawFrameWidth = 160;
-constexpr auto kCroppedFrameSize = 84;
-constexpr auto kCroppedFrameDataSize = kCroppedFrameSize * kCroppedFrameSize;
-constexpr auto kInputFrameCount = 4;
-constexpr auto kInputDataSize = kCroppedFrameDataSize * kInputFrameCount;
+constexpr auto kCroppedVolumeSize = 100;
+constexpr auto kCroppedVolumeDataSize = kCroppedVolumeSize * kCroppedVolumeSize * kCroppedVolumeSize;
+constexpr auto kInputVolumeCount = 4;
+constexpr auto kInputDataSize = kCroppedVolumeDataSize * kInputVolumeCount;
 constexpr auto kMinibatchSize = 32;
 constexpr auto kMinibatchDataSize = kInputDataSize * kMinibatchSize;
 constexpr auto kGamma = 0.95f;
 constexpr auto kOutputCount = 7;
 
-constexpr auto frames_layer_name = "frames_input_layer";
+constexpr auto volumes_layer_name = "volumes_input_layer";
 constexpr auto target_layer_name = "target_input_layer";
 constexpr auto filter_layer_name = "filter_input_layer";
 
-constexpr auto train_frames_blob_name = "frames";
-constexpr auto test_frames_blob_name  = "all_frames";
+constexpr auto train_volumes_blob_name = "volumes";
+constexpr auto test_volumes_blob_name  = "all_volumes";
 constexpr auto target_blob_name       = "target";
 constexpr auto filter_blob_name       = "filter";
 constexpr auto q_values_blob_name     = "q_values";
 
-using FrameData = std::array<uint8_t, kCroppedFrameDataSize>;
-using FrameDataSp = std::shared_ptr<FrameData>;
-using State = std::array<FrameDataSp, kInputFrameCount>;
+using VolumeData = std::array<uint8_t, kCroppedVolumeDataSize>;
+using VolumeDataSp = std::shared_ptr<VolumeData>;
+using State = std::array<VolumeDataSp, kInputVolumeCount>;
 using InputStateBatch = std::vector<State>;
 
 
-using FramesLayerInputData = std::array<float, kMinibatchDataSize>;
+using VolumeLayerInputData = std::array<float, kMinibatchDataSize>;
 using TargetLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 using FilterLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 
@@ -63,14 +61,14 @@ class Transition {
  public:
 
   Transition ( const State state, Environment::ActionCode action,
-                double reward, FrameDataSp next_frame ) :
+                double reward, VolumeDataSp next_volume ) :
       state_ ( state ),
       action_ ( action ),
       reward_ ( reward ),
-      next_frame_ ( next_frame ) {
+      next_volume_ ( next_volume ) {
   }
 
-  bool is_terminal() const { return next_frame_ == nullptr; } 
+  bool is_terminal() const { return next_volume_ == nullptr; } 
   
   const State GetNextState() const;
   
@@ -84,7 +82,7 @@ class Transition {
     const State state_;
     Environment::ActionCode action_;
     double reward_;
-    FrameDataSp next_frame_;
+    VolumeDataSp next_volume_;
 };
 typedef std::shared_ptr<Transition> TransitionSp;
 
@@ -155,12 +153,12 @@ class Fast_DQN {
   using MemoryDataLayerSp = boost::shared_ptr<caffe::MemoryDataLayer<float>>;
 
 
-  Environment::ActionVec SelectActions(const InputStateBatch& frames_batch,
+  Environment::ActionVec SelectActions(const InputStateBatch& volumes_batch,
                               const double epsilon);
   ActionValue SelectActionGreedily(NetSp net,
-                                   const State& last_frames);
+                                   const State& last_volumes);
   std::vector<ActionValue> SelectActionGreedily(NetSp,
-                                   const InputStateBatch& last_frames);
+                                   const InputStateBatch& last_volumes);
 
   /**
     * Clone the given net and store the result in clone_net_
@@ -177,7 +175,7 @@ class Fast_DQN {
     * net. This must be done before forward is called.
     */
   void InputDataIntoLayers(NetSp net,
-      const FramesLayerInputData& frames_data,
+      const VolumeLayerInputData& volume_data,
       const TargetLayerInputData& target_data,
       const FilterLayerInputData& filter_data);
 
