@@ -69,6 +69,7 @@ void HasBlobSize(caffe::Net<Dtype>& net,
 
 void Fast_DQN::LoadTrainedModel(const std::string& model_bin) {
   net_->CopyTrainedLayersFrom(model_bin);
+  CloneTrainingNetToTargetNet();
   //PrintNetwork();
 }
 

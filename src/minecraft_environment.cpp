@@ -49,7 +49,7 @@ public:
       exit(1);
     }
     */
-    /*
+    /* 
     cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
     cv::imshow( "Display window", raw_screen);                   // Show our image inside it.
     cv::waitKey(0);
