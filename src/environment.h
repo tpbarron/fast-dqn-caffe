@@ -17,7 +17,7 @@ class Environment {
   typedef std::vector<int> ActionVec;
   typedef int ActionCode;
 
-  static constexpr auto kCroppedVolumeSize = 100;
+  static constexpr auto kCroppedVolumeSize = 20;
   static constexpr auto kCroppedVolumeDataSize = 
     kCroppedVolumeSize * kCroppedVolumeSize * kCroppedVolumeSize;
   static constexpr auto kInputVolumeCount = 4;

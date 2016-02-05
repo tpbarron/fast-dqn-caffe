@@ -15,7 +15,7 @@
 
 namespace fast_dqn {
 
-constexpr auto kCroppedVolumeSize = 100;
+constexpr auto kCroppedVolumeSize = 20;
 constexpr auto kCroppedVolumeDataSize = kCroppedVolumeSize * kCroppedVolumeSize * kCroppedVolumeSize;
 constexpr auto kInputVolumeCount = 4;
 constexpr auto kInputDataSize = kCroppedVolumeDataSize * kInputVolumeCount;
