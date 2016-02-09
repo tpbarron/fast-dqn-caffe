@@ -7,6 +7,7 @@
 #include <iostream>
 #include <deque>
 #include <algorithm>
+#include <boost/filesystem.hpp>
 
 DEFINE_bool(verbose, false, "verbose output");
 DEFINE_bool(gpu, true, "Use GPU to brew Caffe");
@@ -26,12 +27,19 @@ DEFINE_bool(show_frame, false, "Show the current frame in CUI");
 DEFINE_string(model, "", "Model file to load");
 DEFINE_bool(evaluate, false, "Evaluation mode: only playing a game, no "
   "updates");
+DEFINE_string(snapshot, "", "The solver state to load (*.solverstate).");
+DEFINE_bool(resume, false, "Automatically resume training from the latest snapshot.");
 DEFINE_double(evaluate_with_epsilon, 0.05, "Epsilon value to be used in "
   "evaluation mode");
 DEFINE_double(repeat_games, 1, "Number of games played in evaluation mode");
 DEFINE_int32(steps_per_epoch, 5000, "Number of training steps per epoch");
 
-double CalculateEpsilon(const int iter) {
+double CalculateEpsilon(const int iter, const int memory) {
+  // if resume, try to initialize the memory with good states
+  if (FLAGS_resume && memory < FLAGS_memory_threshold) {
+    return 0.05;
+  }
+
   if (iter < FLAGS_explore) {
     return 1.0 - 0.9 * (static_cast<double>(iter) / FLAGS_explore);
   } else {
@@ -72,13 +80,13 @@ double PlayOneEpisode(
       auto immediate_score = environmentSp->Act(action);
       total_score += immediate_score;
 
-
       // Rewards for DQN are normalized as follows:
       // 1 for any positive score, -1 for any negative score, otherwise 0
       const auto reward =
           immediate_score == 0 ?
               0 :
               immediate_score /= std::abs(immediate_score);
+
       if (update) {
         // Add the current transition to replay memory
         const auto transition = environmentSp->EpisodeOver() ?
@@ -90,7 +98,7 @@ double PlayOneEpisode(
                 environmentSp->PreprocessScreen());
         dqn->AddTransition(transition);
         // If the size of replay memory is enough, update DQN
-        if (dqn->memory_size() > FLAGS_memory_threshold) {
+        if (dqn->memory_size() >= FLAGS_memory_threshold) {
           dqn->Update();
         }
       }
@@ -115,8 +123,9 @@ int main(int argc, char** argv) {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
 
+
   fast_dqn::EnvironmentSp environmentSp =
-  fast_dqn::CreateEnvironment(argc, argv, "dependencies/minecraft_dqn_interface/", FLAGS_evaluate); //FLAGS_gui, FLAGS_rom);
+  fast_dqn::CreateEnvironment(argc, argv, "dependencies/minecraft_dqn_interface/", FLAGS_evaluate);
 
   // Get the vector of legal actions
   const fast_dqn::Environment::ActionVec legal_actions = 
@@ -127,13 +136,38 @@ int main(int argc, char** argv) {
 
   dqn.Initialize();
 
+  boost::filesystem::path save_path("model/");
+  // Look for a recent snapshot to resume
+  if (FLAGS_resume && FLAGS_snapshot.empty()) {
+    FLAGS_snapshot = fast_dqn::FindLatestSnapshot(save_path.native());
+    std::cout << "snapshot: " << FLAGS_snapshot << std::endl;
+  }
+
+  if (!FLAGS_snapshot.empty()) {
+    boost::filesystem::path p(FLAGS_snapshot);
+    p = p.parent_path() / p.stem();
+    //std::string mem_fname = p.native() + ".replaymemory";
+    //CHECK(boost::filesystem::is_regular_file(mem_fname))
+    //  << "Unable to find .replaymemory for snapshot: " << FLAGS_snapshot;
+
+    std::string model_fname = p.native() + ".caffemodel";
+    CHECK(boost::filesystem::is_regular_file(model_fname))
+      << "Unable to find .caffemodel for snapshot: " << FLAGS_snapshot;
+
+    LOG(INFO) << "Resuming from " << FLAGS_snapshot;
+    dqn.RestoreSolver(FLAGS_snapshot);
+    //dqn.LoadReplayMemory(mem_fname);
+    dqn.LoadTrainedModel(model_fname);
+  }
+
   if (!FLAGS_model.empty()) {
     // Just evaluate the given trained model
     LOG(INFO) << "Loading " << FLAGS_model;
+    dqn.LoadTrainedModel(FLAGS_model);
   }
 
   if (FLAGS_evaluate) {
-    dqn.LoadTrainedModel(FLAGS_model);
+    CHECK(!FLAGS_model.empty()) << "Must provide model file to run with evaluate";
     auto total_score = 0.0;
     for (auto i = 0; i < FLAGS_repeat_games; ++i) {
       LOG(INFO) << "game: ";
@@ -166,7 +200,7 @@ int main(int argc, char** argv) {
     run_timer.Start();
 
     epoch_episode_count++;
-    const auto epsilon = CalculateEpsilon(dqn.current_iteration());
+    const auto epsilon = CalculateEpsilon(dqn.current_iteration(), dqn.memory_size());
     auto train_score = PlayOneEpisode(environmentSp, &dqn, epsilon, true);
 
     epoch_total_score += train_score;
