@@ -75,6 +75,8 @@ class Transition {
   const State GetNextState() const;
   
   const State& GetState() const { return state_; }
+
+  const FrameDataSp& GetFrame() const { return next_frame_; }
   
   Environment::ActionCode GetAction() const { return action_; }
   
@@ -141,7 +143,12 @@ class Fast_DQN {
   /**
    * Copy the current training net_ to the target_net_
    */
-    void CloneTrainingNetToTargetNet() { CloneNet(net_); }
+  void CloneTrainingNetToTargetNet() { CloneNet(net_); }
+
+  /**
+   * Restore the last solver to continue training
+   */
+  void RestoreSolver(const std::string& solver_bin);
 
   /**
    * Return the current iteration of the solver
@@ -201,6 +208,21 @@ class Fast_DQN {
   std::mt19937 random_engine_;
   bool verbose_;
 };
+
+
+
+/**
+ * Returns a vector of filenames matching a given regular expression.
+ */
+ std::vector<std::string> FilesMatchingRegexp(const std::string& regexp);
+
+/**
+ * Look for the latest snapshot to resume from. Returns a string
+ * containing the path to the .solverstate. Returns empty string if
+ * none is found. Will only return if the snapshot contains all of:
+ * .solverstate,.caffemodel,.replaymemory
+ */
+ std::string FindLatestSnapshot(const std::string& snapshot_prefix);
 
 
 }  // namespace fast_dqn
