@@ -8,6 +8,8 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include <boost/regex.hpp>
+#include <boost/filesystem.hpp>
 
 namespace fast_dqn {
 
@@ -70,7 +72,10 @@ void HasBlobSize(caffe::Net<Dtype>& net,
 void Fast_DQN::LoadTrainedModel(const std::string& model_bin) {
   net_->CopyTrainedLayersFrom(model_bin);
   CloneTrainingNetToTargetNet();
-  //PrintNetwork();
+}
+
+void Fast_DQN::RestoreSolver(const std::string& solver_bin) {
+  solver_->Restore(solver_bin.c_str());
 }
 
 void Fast_DQN::Initialize() {
@@ -342,85 +347,59 @@ void Fast_DQN::InputDataIntoLayers(NetSp net,
 
 }
 
-
-void Fast_DQN::PrintNetwork() {
-  std::cout << "Layers: " << std::endl;
-  const auto layer_names = net_->layer_names();
-  for (auto it = layer_names.begin(); it != layer_names.end(); ++it) {
-  std::cout << *it << std::endl;
+std::vector<std::string> FilesMatchingRegexp(const std::string& regexp) {
+  using namespace boost::filesystem;
+  path search_stem(regexp);
+  path search_dir(current_path());
+  if (search_stem.has_parent_path()) {
+    search_dir = search_stem.parent_path();
+    search_stem = search_stem.filename();
   }
-  std::cout << std::endl;
-    
-  std::cout << "Blobs: " << std::endl;
-  const auto blob_names = net_->blob_names();
-  for (auto it = blob_names.begin(); it != blob_names.end(); ++it) {
-  std::cout << *it << std::endl;
+  const boost::regex expression(search_stem.native());
+  std::vector<std::string> matching_files;
+  directory_iterator end;
+  for(directory_iterator it(search_dir); it != end; ++it) {
+    if (is_regular_file(it->status())) {
+      path p(it->path());
+      boost::smatch what;
+      if (boost::regex_match(p.filename().native(), what, expression)) {
+	matching_files.push_back(p.native());
+      }
+    }
   }
-  std::cout << std::endl;
-
-
-  /*
-    std::cout << "filter" << std::endl;
-    auto blob = net_->blob_by_name("filter");
-    std::cout << blob->shape_string() << std::endl;
-    for (int i = 0; i < 32; i++) {
-      for (int j = 0; j < kOutputCount; j++) {
-	std::cout << blob->data_at(i, j, 1, 1) << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << std::endl;
-  
-  
-    std::cout << "ip2" << std::endl;
-  blob = net_->blob_by_name("ip2");
-  std::cout << blob->shape_string() << std::endl;
-  for (int i = 0; i < 32; i++) {
-    for (int j = 0; j < kOutputCound; j++) {
-    std::cout << blob->data_at(i, j, 1, 1) << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << std::endl;
-    
-  
-    std::cout << "q values" << std::endl;
-    blob = net_->blob_by_name("q_values");
-    std::cout << blob->shape_string() << std::endl;
-    for (int i = 0; i < 32; i++) {
-      for (int j = 0; j < kOutputCount; j++) {
-	std::cout << blob->data_at(i, j, 1, 1) << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << std::endl;
-
-  
-    std::cout << "filtered q values" << std::endl;
-    blob = net_->blob_by_name("filtered_q_values");
-    std::cout << blob->shape_string() << std::endl;
-    for (int i = 0; i < 32; i++) {
-      for (int j = 0; j < kOutputCount; j++) {
-	std::cout << blob->data_at(i, j, 1, 1) << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << std::endl;
-  
-  
-    std::cout << "targets" << std::endl;
-    blob = net_->blob_by_name("target");
-    std::cout << blob->shape_string() << std::endl;
-    for (int i = 0; i < 32; i++) {
-      for (int j = 0; j < kOutputCount; j++) {
-	std::cout << blob->data_at(i, j, 1, 1) << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << std::endl;
-  */
-  
+  return matching_files;
 }
+
+int ParseIterFromSnapshot(const std::string& snapshot) {
+  unsigned start = snapshot.find_last_of("_");
+  unsigned end = snapshot.find_last_of(".");
+  return std::stoi(snapshot.substr(start+1, end-start-1));
+}
+
+std::string FindLatestSnapshot(const std::string& snapshot_prefix) {
+  using namespace boost::filesystem;
+  std::string regexp(snapshot_prefix + "dqn_iter_[0-9]+\\.solverstate");
+  std::vector<std::string> matching_files = FilesMatchingRegexp(regexp);
+  int max_iter = -1;
+  std::string latest = "";
+  for (const std::string& f : matching_files) {
+    int iter = ParseIterFromSnapshot(f);
+    if (iter > max_iter) {
+      // Look for an associated caffemodel
+      path p(f);
+      p = p.parent_path() / p.stem();
+      std::string caffemodel = p.native() + ".caffemodel";
+      //std::string replaymemory = p.native() + ".replaymemory";
+      if (is_regular_file(caffemodel)) { // && is_regular_file(replaymemory)) {
+	max_iter = iter;
+	latest = f;
+      }
+    }
+  }
+  return latest;
+}
+
+
 
 }  // namespace fast_dqn
 
