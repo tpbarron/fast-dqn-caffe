@@ -33,8 +33,7 @@ public:
   VolumeDataSp PreprocessScreen() {
     std::vector<uint8_t> raw_volume = me_.get_volume();
 
-    //assert(raw_screen.cols == kCroppedFrameSize);
-    //assert(raw_screen.rows == kCroppedFrameSize);
+    assert(raw_volume.size() == kCroppedVolumeDataSize);
   
     auto volume = std::make_shared<VolumeData>();
     for (auto i = 0; i < (int)std::pow(kCroppedVolumeSize, 3.0); ++i) {
@@ -43,6 +42,24 @@ public:
     
     return volume;
   }
+  
+  
+  /**
+   * 
+   */
+  TransformDataSp GetTransform() {
+    std::vector<float> raw_transform = me_.get_transform();
+
+    assert(raw_transform.size() == kTransformDataSize);
+  
+    auto transform = std::make_shared<TransformData>();
+    for (auto i = 0; i < kTransformDataSize; ++i) {
+      (*transform)[i] = raw_transform[i];
+    }
+    
+    return transform;
+  }
+  
 
   /**
    * TODO: define the actions in a way that they can be accessed by both c++ and 
@@ -50,7 +67,7 @@ public:
    */
   double ActNoop() {
     double reward = 0;
-    for (auto i = 0; i < kInputVolumeCount && !me_.is_game_over(); ++i) {
+    for (auto i = 0; i < kInputCount && !me_.is_game_over(); ++i) {
       //std::cout << "actnoop, i = " << i << std::endl;
       // TODO: Should this be an int or some type of action object?
       // Temporarility 0 will always be No-op
@@ -61,7 +78,7 @@ public:
 
   double Act(int action) {
     double reward = 0;
-    for (auto i = 0; i < kInputVolumeCount && !me_.is_game_over(); ++i) {
+    for (auto i = 0; i < kInputCount && !me_.is_game_over(); ++i) {
       // TODO: action type?
       reward += me_.act(action);
     }

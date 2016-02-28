@@ -12,7 +12,22 @@ layer {
   memory_data_param {
     batch_size: 32
     channels: 4
-    height: 8000
+    height: 1000
+    width: 1
+  }
+}
+layer {
+  name: "transform_input_layer"
+  type: "MemoryData"
+  top: "transform"
+  top: "dummy_transform"
+  include {
+    phase: TRAIN
+  }
+  memory_data_param {
+    batch_size: 32
+    channels: 4
+    height: 5 # 2 rotation values, 3 translate values
     width: 1
   }
 }
@@ -50,6 +65,7 @@ layer {
   name: "silence"
   type: "Silence"
   bottom: "dummy_volumes"
+  bottom: "dummy_transform"
   bottom: "dummy_filter"
   bottom: "dummy_target"
   include {
@@ -84,7 +100,7 @@ layer {
   memory_data_param {
     batch_size: 32
     channels: 4
-    height: 8000
+    height: 1000
     width: 1
   }
 }
@@ -109,11 +125,11 @@ layer {
   }
   reshape_param {
     shape {
-      dim: 0    # keep 32 batch size
-      dim: 0    # keep 4 channels
-      dim: 20   # set to 100, 100, 100 cube
-      dim: 20
-      dim: 20
+      dim: 32    # keep 32 batch size
+      dim: 4    # keep 4 channels
+      dim: 10   # set to 100, 100, 100 cube
+      dim: 10
+      dim: 10
     }
   }
 }    
@@ -127,11 +143,11 @@ layer {
   }
   reshape_param {
     shape {
-      dim: 0    # keep 32 batch size
-      dim: 0    # keep 4 channels
-      dim: 20   # set to 100, 100, 100 cube
-      dim: 20
-      dim: 20
+      dim: 32    # keep 32 batch size
+      dim: 4     # keep 4 channels
+      dim: 10   # set to 100, 100, 100 cube
+      dim: 10
+      dim: 10
     }
   }
 }
@@ -157,8 +173,8 @@ layer {
   }
   convolution_param {
     num_output: 32
-    kernel_size: 8
-    stride: 4
+    kernel_size: 4
+    stride: 2
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -188,8 +204,8 @@ layer {
   }
   convolution_param {
     num_output: 32
-    kernel_size: 8
-    stride: 4
+    kernel_size: 4
+    stride: 2
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -225,8 +241,8 @@ layer {
   }
   convolution_param {
     num_output: 64
-    kernel_size: 4
-    stride: 2
+    kernel_size: 2
+    stride: 1
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -248,12 +264,42 @@ layer {
   }
 }
 
+layer {
+  name: "reshape_conv2"
+  type: "Reshape"
+  bottom: "conv2"
+  top: "conv2_reshaped"
+#  include {
+#    phase: TEST
+#  }
+  reshape_param {
+    shape {
+      dim: 0    # keep 32 batch size
+      dim: 4    # 4 outputs to match the transforms
+      dim: -1   # the remaining count
+      dim: 1
+    }
+  }
+}
+
+# concat the convolutional output and the transform data
+layer {
+  name: "concat"
+  type: "Concat"
+  bottom: "conv2_reshaped"
+  bottom: "transform"
+  top: "concat_conv_transform"
+  concat_param {
+    axis: 2
+  }
+}
+
 
 # fully connected layers
 layer {
   name: "ip1_layer"
   type: "InnerProduct"
-  bottom: "conv2"
+  bottom: "concat_conv_transform"
   top: "ip1"
   inner_product_param {
     num_output: 512

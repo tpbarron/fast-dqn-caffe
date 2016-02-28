@@ -37,23 +37,43 @@ std::string PrintQValues(
 }
 
 
-const State Transition::GetNextState() const {
+const VolumeState Transition::GetNextVolumeState() const {
 
   //  Create the s(t+1) states from the experience(t)'s
 
   if (next_volume_ == nullptr) {
     // Terminal state so no next_observation, just return current state
-    return state_;
+    return vState_;
   } else {
-    State state_clone;
+    VolumeState state_clone;
 
-    for (int i = 0; i < kInputVolumeCount - 1; ++i)
-      state_clone[i] = state_[i + 1];
-    state_clone[kInputVolumeCount - 1] = next_volume_;
+    for (int i = 0; i < kInputCount - 1; ++i)
+      state_clone[i] = vState_[i + 1];
+    state_clone[kInputCount - 1] = next_volume_;
     return state_clone;
   }
 
 }
+
+const TransformState Transition::GetNextTransformState() const {
+
+  //  Create the s(t+1) states from the experience(t)'s
+
+  if (next_transform_ == nullptr) {
+    // Terminal state so no next_observation, just return current state
+    return tState_;
+  } else {
+    TransformState state_clone;
+
+    for (int i = 0; i < kInputCount - 1; ++i)
+      state_clone[i] = tState_[i + 1];
+    state_clone[kInputCount - 1] = next_transform_;
+    return state_clone;
+  }
+
+}
+
+
 
 template <typename Dtype>
 void HasBlobSize(caffe::Net<Dtype>& net,
@@ -95,8 +115,9 @@ void Fast_DQN::Initialize() {
   CloneTrainingNetToTargetNet();
 
   // Check the primary network
+
   HasBlobSize(*net_, train_volumes_blob_name, {kMinibatchSize,
-          kInputVolumeCount, (int)std::pow(kCroppedVolumeSize, 3), 1});
+          kInputCount, (int)std::pow(kCroppedVolumeSize, 3), 1});
   HasBlobSize(*net_, target_blob_name, {kMinibatchSize,kOutputCount,1,1});
   HasBlobSize(*net_, filter_blob_name, {kMinibatchSize,kOutputCount,1,1});
 
@@ -105,13 +126,17 @@ void Fast_DQN::Initialize() {
 }
 
 
-Environment::ActionCode Fast_DQN::SelectAction(const State& frames, 
+Environment::ActionCode Fast_DQN::SelectAction(const VolumeState& frames, 
+                                               const TransformState& transforms,
                                                const double epsilon) {
-  return SelectActions(InputStateBatch{{frames}}, epsilon)[0];
+  return SelectActions(InputVolumeStateBatch{{frames}},
+                       InputTransformStateBatch{{transforms}},
+                       epsilon)[0];
 }
 
 Environment::ActionVec Fast_DQN::SelectActions(
-                              const InputStateBatch& frames_batch,
+                              const InputVolumeStateBatch& frames_batch,
+                              const InputTransformStateBatch& transforms_batch,
                               const double epsilon) {
   CHECK(epsilon <= 1.0 && epsilon >= 0.0);
   CHECK_LE(frames_batch.size(), kMinibatchSize);
@@ -126,7 +151,7 @@ Environment::ActionVec Fast_DQN::SelectActions(
   } else {
     // Select greedily
     std::vector<ActionValue> actions_and_values =
-        SelectActionGreedily(target_net_, frames_batch);
+        SelectActionGreedily(target_net_, frames_batch, transforms_batch);
     CHECK_EQ(actions_and_values.size(), actions.size());
     for (int i=0; i<actions_and_values.size(); ++i) {
       actions[i] = actions_and_values[i].action;
@@ -138,27 +163,48 @@ Environment::ActionVec Fast_DQN::SelectActions(
 
 ActionValue Fast_DQN::SelectActionGreedily(
   NetSp net,
-  const State& last_frames) {
-  return SelectActionGreedily(net, InputStateBatch{{last_frames}}).front();
+  const VolumeState& last_frames,
+  const TransformState& last_transforms) {
+  return SelectActionGreedily(net, 
+    InputVolumeStateBatch{{last_frames}}, 
+    InputTransformStateBatch{{last_transforms}}).front();
 }
 
 std::vector<ActionValue> Fast_DQN::SelectActionGreedily(
     NetSp net,
-    const InputStateBatch& last_frames_batch) {
+    const InputVolumeStateBatch& last_frames_batch,
+    const InputTransformStateBatch& last_transforms_batch) {
+    
   assert(last_frames_batch.size() <= kMinibatchSize);
-  std::array<float, kMinibatchDataSize> frames_input;
+  assert(last_transforms_batch.size() <= kMinibatchSize);
+  
+  std::array<float, kMinibatchVolumeDataSize> frames_input;
+  std::array<float, kMinibatchTransformDataSize> transforms_input;
+  
   for (auto i = 0; i < last_frames_batch.size(); ++i) {
     // Input frames to the net and compute Q values for each legal actions
-    for (auto j = 0; j < kInputVolumeCount; ++j) {
+    for (auto j = 0; j < kInputCount; ++j) {
       const auto& frame_data = last_frames_batch[i][j];
       std::copy(
           frame_data->begin(),
           frame_data->end(),
-          frames_input.begin() + i * kInputDataSize +
+          frames_input.begin() + i * kInputVolumeDataSize +
               j * kCroppedVolumeDataSize);
     }
   }
-  InputDataIntoLayers(net, frames_input, dummy_input_data_, dummy_input_data_);
+  
+  for (auto i = 0; i < last_transforms_batch.size(); ++i) {
+    for (auto j = 0; j < kInputCount; ++j) {
+      const auto& transform_data = last_transforms_batch[i][j];
+      std::copy(
+          transform_data->begin(),
+          transform_data->end(),
+          transforms_input.begin() + i * kInputTransformDataSize +
+              j * kTransformDataSize);      
+    }
+  }
+  
+  InputDataIntoLayers(net, frames_input, transforms_input, dummy_input_data_, dummy_input_data_);
   net->ForwardPrefilled(nullptr);
 
   std::vector<ActionValue> results;
@@ -221,21 +267,25 @@ void Fast_DQN::Update() {
   }
 
   // Compute target values: max_a Q(s',a)
-  std::vector<State> target_last_frames_batch;
+  std::vector<VolumeState> target_last_frames_batch;
+  std::vector<TransformState> target_last_transforms_batch;
+
   for (const auto idx : transitions) {
     const auto& transition = replay_memory_[idx];
     if (transition.is_terminal()) {
       continue;
     }
 
-    target_last_frames_batch.push_back(transition.GetNextState());
+    target_last_frames_batch.push_back(transition.GetNextVolumeState());
+    target_last_transforms_batch.push_back(transition.GetNextTransformState());
   }
 
     // Get the next state QValues
   const auto actions_and_values =
-      SelectActionGreedily(target_net_, target_last_frames_batch);
+      SelectActionGreedily(target_net_, target_last_frames_batch, target_last_transforms_batch);
 
   VolumeLayerInputData frames_input;
+  TransformLayerInputData transform_input;
   TargetLayerInputData target_input;
   FilterLayerInputData filter_input;
   std::fill(target_input.begin(), target_input.end(), 0.0f);
@@ -255,17 +305,24 @@ void Fast_DQN::Update() {
     if (verbose_)
       VLOG(1) << "filter:" << environmentSp_->action_to_string(action) 
         << " target:" << target;
-    for (auto j = 0; j < kInputVolumeCount; ++j) {
-      const State& state = transition.GetState();
+    for (auto j = 0; j < kInputCount; ++j) {
+      const VolumeState& state = transition.GetVolumeState();
       const auto& frame_data = state[j];
       std::copy(
           frame_data->begin(),
           frame_data->end(),
-          frames_input.begin() + i * kInputDataSize +
-              j * kCroppedVolumeDataSize);
+          frames_input.begin() + i * kInputVolumeDataSize + j * kCroppedVolumeDataSize);     
+    }
+    for (auto j = 0; j < kInputCount; ++j) {
+      const TransformState& state = transition.GetTransformState();
+      const auto& transform_data = state[j];
+      std::copy(
+          transform_data->begin(),
+          transform_data->end(),
+          transform_input.begin() + i * kInputTransformDataSize + j * kTransformDataSize);
     }
   }
-  InputDataIntoLayers(net_, frames_input, target_input, filter_input);
+  InputDataIntoLayers(net_, frames_input, transform_input, target_input, filter_input);
   solver_->Step(1);
   // Log the first parameter of each hidden layer
 //   VLOG(1) << "conv1:" <<
@@ -310,6 +367,7 @@ void Fast_DQN::CloneNet(NetSp net) {
 
 void Fast_DQN::InputDataIntoLayers(NetSp net,
       const VolumeLayerInputData& frames_input,
+      const TransformLayerInputData& transforms_input,
       const TargetLayerInputData& target_input,
       const FilterLayerInputData& filter_input) {
 
@@ -322,6 +380,16 @@ void Fast_DQN::InputDataIntoLayers(NetSp net,
                             const_cast<float*>(frames_input.data()),
                             frames_input_layer->batch_size());
 
+
+  const auto transform_input_layer =
+      boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float>>(
+          net->layer_by_name(transform_layer_name));
+  CHECK(transform_input_layer);
+
+  transform_input_layer->Reset(const_cast<float*>(transforms_input.data()),
+                              const_cast<float*>(transforms_input.data()),
+                              transform_input_layer->batch_size());
+                            
   if (net == net_) { // training net?
     const auto target_input_layer =
         boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float>>(

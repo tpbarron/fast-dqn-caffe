@@ -50,26 +50,36 @@ double PlayOneEpisode(
     const double epsilon,
     const bool update) {
   assert(!environmentSp->EpisodeOver());
+  
   std::deque<fast_dqn::VolumeDataSp> past_frames;
+  std::deque<fast_dqn::TransformDataSp> past_transforms;
+  
   auto total_score = 0.0;
   for (auto frame = 0; !environmentSp->EpisodeOver(); ++frame) {
     if (FLAGS_verbose)
       LOG(INFO) << "frame: " << frame;
     const auto current_frame = environmentSp->PreprocessScreen();
+    const auto current_transform = environmentSp->GetTransform();
 //     if (FLAGS_show_frame) {
 //       std::cout << fast_dqn::DrawFrame(*current_frame);
 //     }
     past_frames.push_back(current_frame);
-    if (past_frames.size() < fast_dqn::kInputVolumeCount) {
+    past_transforms.push_back(current_transform);
+    
+    if (past_frames.size() < fast_dqn::kInputCount) {
       // If there are not past frames enough for DQN input, just select NOOP
       environmentSp->ActNoop();
     } else {
-      if (past_frames.size() > fast_dqn::kInputVolumeCount) {
+      if (past_frames.size() > fast_dqn::kInputCount) {
         past_frames.pop_front();
+        past_transforms.pop_front();
       }
-      fast_dqn::State input_frames;
+      fast_dqn::VolumeState input_frames;
+      fast_dqn::TransformState input_transforms;
       std::copy(past_frames.begin(), past_frames.end(), input_frames.begin());
-      const auto action = dqn->SelectAction(input_frames, epsilon);
+      std::copy(past_transforms.begin(), past_transforms.end(), input_transforms.begin());
+
+      const auto action = dqn->SelectAction(input_frames, input_transforms, epsilon);
 
       auto immediate_score = environmentSp->Act(action);
       total_score += immediate_score;
@@ -84,12 +94,14 @@ double PlayOneEpisode(
       if (update) {
         // Add the current transition to replay memory
         const auto transition = environmentSp->EpisodeOver() ?
-            fast_dqn::Transition(input_frames, action, reward, nullptr) :
+            fast_dqn::Transition(input_frames, input_transforms, action, reward, nullptr, nullptr) :
             fast_dqn::Transition(
                 input_frames,
+                input_transforms,
                 action,
                 reward,
-                environmentSp->PreprocessScreen());
+                environmentSp->PreprocessScreen(),
+                environmentSp->GetTransform());
         dqn->AddTransition(transition);
         // If the size of replay memory is enough, update DQN
         if (dqn->memory_size() > FLAGS_memory_threshold) {

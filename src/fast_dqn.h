@@ -15,32 +15,45 @@
 
 namespace fast_dqn {
 
-constexpr auto kCroppedVolumeSize = 20;
+constexpr auto kCroppedVolumeSize = 10;
 constexpr auto kCroppedVolumeDataSize = kCroppedVolumeSize * kCroppedVolumeSize * kCroppedVolumeSize;
-constexpr auto kInputVolumeCount = 4;
-constexpr auto kInputDataSize = kCroppedVolumeDataSize * kInputVolumeCount;
+constexpr auto kTransformDataSize = 5;
+constexpr auto kInputCount = 4;
+constexpr auto kInputVolumeDataSize = kCroppedVolumeDataSize * kInputCount;
+constexpr auto kInputTransformDataSize = kTransformDataSize * kInputCount;
 constexpr auto kMinibatchSize = 32;
-constexpr auto kMinibatchDataSize = kInputDataSize * kMinibatchSize;
+constexpr auto kMinibatchVolumeDataSize = kInputVolumeDataSize * kMinibatchSize;
+constexpr auto kMinibatchTransformDataSize = kInputTransformDataSize * kMinibatchSize;
 constexpr auto kGamma = 0.95f;
 constexpr auto kOutputCount = 7;
 
-constexpr auto volumes_layer_name = "volumes_input_layer";
-constexpr auto target_layer_name = "target_input_layer";
-constexpr auto filter_layer_name = "filter_input_layer";
+constexpr auto volumes_layer_name    = "volumes_input_layer";
+constexpr auto transform_layer_name = "transform_input_layer";
+constexpr auto target_layer_name     = "target_input_layer";
+constexpr auto filter_layer_name     = "filter_input_layer";
 
 constexpr auto train_volumes_blob_name = "volumes";
 constexpr auto test_volumes_blob_name  = "all_volumes";
+constexpr auto transform_blob_name    = "transform";
 constexpr auto target_blob_name       = "target";
 constexpr auto filter_blob_name       = "filter";
 constexpr auto q_values_blob_name     = "q_values";
 
 using VolumeData = std::array<uint8_t, kCroppedVolumeDataSize>;
 using VolumeDataSp = std::shared_ptr<VolumeData>;
-using State = std::array<VolumeDataSp, kInputVolumeCount>;
-using InputStateBatch = std::vector<State>;
+
+using TransformData = std::array<float, kTransformDataSize>;
+using TransformDataSp = std::shared_ptr<TransformData>;
+
+using VolumeState = std::array<VolumeDataSp, kInputCount>;
+using TransformState = std::array<TransformDataSp, kInputCount>;
+
+using InputVolumeStateBatch = std::vector<VolumeState>;
+using InputTransformStateBatch = std::vector<TransformState>;
 
 
-using VolumeLayerInputData = std::array<float, kMinibatchDataSize>;
+using VolumeLayerInputData = std::array<float, kMinibatchVolumeDataSize>;
+using TransformLayerInputData = std::array<float, kMinibatchTransformDataSize>;
 using TargetLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 using FilterLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 
@@ -60,29 +73,42 @@ typedef struct ActionValue {
 class Transition {
  public:
 
-  Transition ( const State state, Environment::ActionCode action,
-                double reward, VolumeDataSp next_volume ) :
-      state_ ( state ),
+  Transition ( const VolumeState vState, 
+               const TransformState tState, 
+               Environment::ActionCode action,
+               double reward, 
+               VolumeDataSp next_volume,
+               TransformDataSp next_transform ) :
+      vState_ ( vState ),
+      tState_ ( tState ),
       action_ ( action ),
       reward_ ( reward ),
-      next_volume_ ( next_volume ) {
+      next_volume_ ( next_volume ),
+      next_transform_ ( next_transform ) {
+
   }
 
   bool is_terminal() const { return next_volume_ == nullptr; } 
   
-  const State GetNextState() const;
+  const VolumeState GetNextVolumeState() const;
   
-  const State& GetState() const { return state_; }
+  const TransformState GetNextTransformState() const;
+  
+  const VolumeState& GetVolumeState() const { return vState_; }
+  
+  const TransformState& GetTransformState() const { return tState_; }
   
   Environment::ActionCode GetAction() const { return action_; }
   
   double GetReward() const { return reward_; }
 
  private:
-    const State state_;
+    const VolumeState vState_;
+    const TransformState tState_;
     Environment::ActionCode action_;
     double reward_;
     VolumeDataSp next_volume_;
+    TransformDataSp next_transform_;
 };
 typedef std::shared_ptr<Transition> TransitionSp;
 
@@ -122,7 +148,9 @@ class Fast_DQN {
   /**
    * Select an action by epsilon-greedy.
    */
-  Environment::ActionCode SelectAction(const State& input_frames, double epsilon);
+  Environment::ActionCode SelectAction(const VolumeState& input_frames, 
+                                       const TransformState& input_transforms,
+                                       double epsilon);
 
   /**
    * Add a transition to replay memory
@@ -139,7 +167,7 @@ class Fast_DQN {
   /**
    * Copy the current training net_ to the target_net_
    */
-    void CloneTrainingNetToTargetNet() { CloneNet(net_); }
+  void CloneTrainingNetToTargetNet() { CloneNet(net_); }
 
   /**
    * Return the current iteration of the solver
@@ -153,12 +181,15 @@ class Fast_DQN {
   using MemoryDataLayerSp = boost::shared_ptr<caffe::MemoryDataLayer<float>>;
 
 
-  Environment::ActionVec SelectActions(const InputStateBatch& volumes_batch,
-                              const double epsilon);
+  Environment::ActionVec SelectActions(const InputVolumeStateBatch& volumes_batch,
+                                       const InputTransformStateBatch& transforms_batch,
+                                       const double epsilon);
   ActionValue SelectActionGreedily(NetSp net,
-                                   const State& last_volumes);
+                                   const VolumeState& last_volumes,
+                                   const TransformState& last_transforms);
   std::vector<ActionValue> SelectActionGreedily(NetSp,
-                                   const InputStateBatch& last_volumes);
+                                   const InputVolumeStateBatch& last_volumes,
+                                   const InputTransformStateBatch& last_transforms);
 
   /**
     * Clone the given net and store the result in clone_net_
@@ -176,6 +207,7 @@ class Fast_DQN {
     */
   void InputDataIntoLayers(NetSp net,
       const VolumeLayerInputData& volume_data,
+      const TransformLayerInputData& transform_data,
       const TargetLayerInputData& target_data,
       const FilterLayerInputData& filter_data);
 
