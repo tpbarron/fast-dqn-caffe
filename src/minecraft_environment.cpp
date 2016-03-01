@@ -31,12 +31,12 @@ public:
    * the minecraft game
    */
   VolumeDataSp PreprocessScreen() {
-    std::vector<uint8_t> raw_volume = me_.get_volume();
+    std::vector<uint8_t> raw_volume = me_.get_grid();
 
     assert(raw_volume.size() == kCroppedVolumeDataSize);
   
     auto volume = std::make_shared<VolumeData>();
-    for (auto i = 0; i < (int)std::pow(kCroppedVolumeSize, 3.0); ++i) {
+    for (auto i = 0; i < (int)std::pow(kCroppedVolumeSize, 2.0); ++i) {
       (*volume)[i] = raw_volume[i]; //resulting_color;
     }
     

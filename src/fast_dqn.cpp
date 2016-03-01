@@ -117,7 +117,7 @@ void Fast_DQN::Initialize() {
   // Check the primary network
 
   HasBlobSize(*net_, train_volumes_blob_name, {kMinibatchSize,
-          kInputCount, (int)std::pow(kCroppedVolumeSize, 3), 1});
+          kInputCount, (int)std::pow(kCroppedVolumeSize, 2), 1});
   HasBlobSize(*net_, target_blob_name, {kMinibatchSize,kOutputCount,1,1});
   HasBlobSize(*net_, filter_blob_name, {kMinibatchSize,kOutputCount,1,1});
 

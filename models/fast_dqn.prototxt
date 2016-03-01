@@ -12,7 +12,7 @@ layer {
   memory_data_param {
     batch_size: 32
     channels: 4
-    height: 1000
+    height: 100
     width: 1
   }
 }
@@ -100,7 +100,7 @@ layer {
   memory_data_param {
     batch_size: 32
     channels: 4
-    height: 1000
+    height: 100
     width: 1
   }
 }
@@ -127,8 +127,7 @@ layer {
     shape {
       dim: 32    # keep 32 batch size
       dim: 4    # keep 4 channels
-      dim: 10   # set to 100, 100, 100 cube
-      dim: 10
+      dim: 10   # set to 10, 10 grid
       dim: 10
     }
   }
@@ -145,8 +144,7 @@ layer {
     shape {
       dim: 32    # keep 32 batch size
       dim: 4     # keep 4 channels
-      dim: 10   # set to 100, 100, 100 cube
-      dim: 10
+      dim: 10    # set to 10, 10 grid
       dim: 10
     }
   }
@@ -183,7 +181,7 @@ layer {
       type: "constant"
       value: 0
     }
-    engine: CAFFE
+    #engine: CAFFE
   }
 }
 layer {
@@ -214,7 +212,7 @@ layer {
       type: "constant"
       value: 0
     }
-    engine: CAFFE
+    #engine: CAFFE
   }
 }
 layer {
@@ -251,7 +249,7 @@ layer {
       type: "constant"
       value: 0
     }
-    engine: CAFFE
+    #engine: CAFFE
   }
 }
 layer {

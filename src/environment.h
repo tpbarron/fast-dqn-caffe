@@ -19,7 +19,7 @@ class Environment {
 
   static constexpr auto kCroppedVolumeSize = 10;
   static constexpr auto kCroppedVolumeDataSize = 
-    kCroppedVolumeSize * kCroppedVolumeSize * kCroppedVolumeSize;
+    kCroppedVolumeSize * kCroppedVolumeSize; // * kCroppedVolumeSize;
   
   static constexpr auto kTransformDataSize = 5;
   
