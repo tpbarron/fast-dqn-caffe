@@ -286,7 +286,7 @@ caffe::NetParameter Fast_DQN::CreateNet(bool unroll1_is_lstm) {
   np.set_name("Deep Recurrent Q-Network");
   MemoryDataLayer(
       np, frames_layer_name, {train_frames_blob_name,"dummy_frames"}, caffe::TRAIN,
-      {kMinibatchSize, kInputFrameCount, kCroppedFrameSize, kCroppedFrameSize});
+      {kMinibatchSize, frames_per_forward_, kCroppedFrameSize, kCroppedFrameSize});
   MemoryDataLayer(
       np, cont_layer_name, {cont_blob_name,"dummy_cont"}, caffe::TRAIN,
       {unroll_, kMinibatchSize, 1, 1});
@@ -405,6 +405,10 @@ void Fast_DQN::Initialize() {
   // solver_.reset(caffe::SolverRegistry<float>::CreateSolver(solver_param));
 
   net_ = solver_->net();
+  //std::cout << "Pre net initalization" << std::endl;
+  InitNet(net_);
+  //std::cout << "Post net initalization" << std::endl; 
+  
   //CHECK_EQ(solver_->test_nets().size(), 1);
   //target_net_ = solver_->test_nets()[0];
   // Test Net shares parameters with train net at all times
@@ -412,20 +416,14 @@ void Fast_DQN::Initialize() {
   // Clone net maintains its own set of parameters
   //CloneNet(target_net_);
 
-  InitNet(net_);
   CloneTrainingNetToTargetNet();
   
   // Check the primary network
   HasBlobSize(*net_, train_frames_blob_name, {kMinibatchSize,
-          kInputFrameCount, kCroppedFrameSize, kCroppedFrameSize});
+          frames_per_forward_, kCroppedFrameSize, kCroppedFrameSize});
   HasBlobSize(*net_, target_blob_name, {unroll_, kMinibatchSize, kOutputCount, 1});
   HasBlobSize(*net_, filter_blob_name, {unroll_, kMinibatchSize, kOutputCount, 1});
   HasBlobSize(*net_, cont_blob_name, {unroll_, kMinibatchSize, 1, 1});
-  // Check the test network
-  HasBlobSize(*target_net_, test_frames_blob_name, {kMinibatchSize,
-          kInputFrameCount, kCroppedFrameSize, kCroppedFrameSize});
-  HasBlobSize(*target_net_, cont_blob_name, {1, kMinibatchSize, 1, 1});
-
 
   LOG(INFO) << "Finished " << net_->name() << " Initialization";
 }
@@ -484,7 +482,7 @@ std::vector<ActionValue> Fast_DQN::SelectActionGreedily(
               j * kCroppedFrameDataSize);
     }
   }
-  InputDataIntoLayers(net, frames_input, dummy_input_data_, dummy_input_data_);
+  InputDataIntoLayers(net, frames_input, cont_input, dummy_input_data_, dummy_input_data_);
   net->ForwardPrefilled(nullptr);
 
   std::vector<ActionValue> results;
@@ -591,7 +589,7 @@ void Fast_DQN::Update() {
               j * kCroppedFrameDataSize);
     }
   }
-  InputDataIntoLayers(net_, frames_input, target_input, filter_input);
+  InputDataIntoLayers(net_, frames_input, cont_input, target_input, filter_input);
   solver_->Step(1);
   // Log the first parameter of each hidden layer
 //   VLOG(1) << "conv1:" <<
@@ -636,6 +634,7 @@ void Fast_DQN::CloneNet(NetSp net) {
 
 void Fast_DQN::InputDataIntoLayers(NetSp net,
       const FramesLayerInputData& frames_input,
+      const ContLayerInputData&   cont_input,
       const TargetLayerInputData& target_input,
       const FilterLayerInputData& filter_input) {
 
@@ -648,6 +647,14 @@ void Fast_DQN::InputDataIntoLayers(NetSp net,
                             const_cast<float*>(frames_input.data()),
                             frames_input_layer->batch_size());
 
+  const auto cont_input_layer =
+      boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float>>(
+          net->layer_by_name(cont_layer_name));
+  CHECK(cont_input_layer);
+  cont_input_layer->Reset(const_cast<float*>(cont_input.data()), 
+                          const_cast<float*>(cont_input.data()),
+                          cont_input_layer->batch_size());
+                          
   if (net == net_) { // training net?
     const auto target_input_layer =
         boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float>>(

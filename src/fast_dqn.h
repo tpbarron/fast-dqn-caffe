@@ -49,6 +49,7 @@ using InputStateBatch = std::vector<State>;
 
 
 using FramesLayerInputData = std::array<float, kMinibatchDataSize>;
+using ContLayerInputData = std::array<float, kMinibatchDataSize>;
 using TargetLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 using FilterLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 
@@ -115,10 +116,21 @@ class Fast_DQN {
         gamma_(gamma),
         unroll_(unroll),
         unroll1_is_lstm_(unroll1_is_lstm),
+        frames_per_forward_(unroll + kInputFrameCount - 1),
         verbose_(verbose),
         random_engine_(0), 
         clone_frequency_(10000), // How often (steps) the target_net_ is updated
         last_clone_iter_(0) {   // Iteration in which the net was last cloned
+        
+            //frames_per_forward_ = unroll_ + frames_per_timestep_ - 1;
+            /*frame_input_size_TRAIN_ = minibatch_size_ * frames_per_forward_ *
+                kCroppedFrameDataSize;
+            target_input_size_TRAIN_ = unroll_ * minibatch_size_ * kOutputCount;
+            filter_input_size_TRAIN_ = unroll_ * minibatch_size_ * kOutputCount;
+            cont_input_size_TRAIN_ = unroll_ * minibatch_size_;
+            frame_input_size_TEST_ = minibatch_size_ * frames_per_timestep_ *
+                kCroppedFrameDataSize;
+            cont_input_size_TEST_ = minibatch_size_;*/
         }
 
 
@@ -155,7 +167,7 @@ class Fast_DQN {
   /**
    * Copy the current training net_ to the target_net_
    */
-    void CloneTrainingNetToTargetNet() { CloneNet(net_); }
+  void CloneTrainingNetToTargetNet() { CloneNet(net_); }
 
   /**
    * Return the current iteration of the solver
@@ -191,6 +203,7 @@ class Fast_DQN {
     */
   void InputDataIntoLayers(NetSp net,
       const FramesLayerInputData& frames_data,
+      const ContLayerInputData&   cont_input,
       const TargetLayerInputData& target_data,
       const FilterLayerInputData& filter_data);
 
@@ -203,6 +216,7 @@ class Fast_DQN {
   
   const int unroll_;
   const bool unroll1_is_lstm_;
+  const int frames_per_forward_;
   
   const std::string solver_param_;
   SolverSp solver_;

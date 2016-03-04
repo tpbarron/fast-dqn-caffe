@@ -9,7 +9,7 @@
 #include <algorithm>
 
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(gpu, true, "Use GPU to brew Caffe");
+DEFINE_bool(gpu, false, "Use GPU to brew Caffe");
 DEFINE_bool(gui, false, "Open a GUI window");
 DEFINE_string(rom, "breakout.bin", "Atari 2600 ROM to play");
 DEFINE_string(solver, "models/fast_dqn_solver.prototxt", "Solver parameter"
