@@ -1,4 +1,4 @@
-net: "models/fast_dqn.prototxt"
+#net: "models/fast_dqn.prototxt"
 solver_type: ADADELTA
 momentum: 0.90
 base_lr: 0.1
@@ -16,3 +16,13 @@ clip_gradients: 10
 # snapshot intermediate results
 snapshot: 1000000
 snapshot_prefix: "model/dqn"
+
+#momentum: 0.95
+#base_lr: 0.1
+#lr_policy: "step"
+#gamma: 0.1
+#stepsize: 10000000
+#max_iter: 10000000
+test_iter: 0
+test_interval: 1000000000
+

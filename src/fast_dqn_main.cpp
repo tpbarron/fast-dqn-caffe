@@ -30,6 +30,10 @@ DEFINE_double(evaluate_with_epsilon, 0.05, "Epsilon value to be used in "
 DEFINE_double(repeat_games, 1, "Number of games played in evaluation mode");
 DEFINE_int32(steps_per_epoch, 5000, "Number of training steps per epoch");
 
+DEFINE_bool(unroll1_is_lstm, false, "Use LSTM layer instead of IP when unroll=1");
+DEFINE_int32(unroll, 10, "RNN iterations to unroll");
+
+
 double CalculateEpsilon(const int iter) {
   if (iter < FLAGS_explore) {
     return 1.0 - 0.9 * (static_cast<double>(iter) / FLAGS_explore);
@@ -119,7 +123,8 @@ int main(int argc, char** argv) {
     environmentSp->GetMinimalActionSet();
 
   fast_dqn::Fast_DQN dqn(environmentSp, legal_actions, FLAGS_solver, 
-                         FLAGS_memory, FLAGS_gamma, FLAGS_verbose);
+                         FLAGS_memory, FLAGS_gamma, FLAGS_unroll, 
+                         FLAGS_unroll1_is_lstm, FLAGS_verbose);
 
   dqn.Initialize();
 

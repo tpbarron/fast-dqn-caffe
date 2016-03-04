@@ -11,6 +11,7 @@
 #include <utility>
 #include <deque>
 #include <string>
+#include <boost/optional.hpp>
 // #include <caffe/layers/memory_data_layer.hpp>
 
 namespace fast_dqn {
@@ -28,13 +29,18 @@ constexpr auto kOutputCount = 18;
 
 constexpr auto frames_layer_name = "frames_input_layer";
 constexpr auto target_layer_name = "target_input_layer";
+constexpr auto cont_layer_name   = "cont_input_layer";
 constexpr auto filter_layer_name = "filter_input_layer";
 
 constexpr auto train_frames_blob_name = "frames";
 constexpr auto test_frames_blob_name  = "all_frames";
 constexpr auto target_blob_name       = "target";
 constexpr auto filter_blob_name       = "filter";
+constexpr auto cont_blob_name         = "cont";
 constexpr auto q_values_blob_name     = "q_values";
+
+constexpr auto ip1Size = 512;
+constexpr auto lstmSize = 512;
 
 using FrameData = std::array<uint8_t, kCroppedFrameDataSize>;
 using FrameDataSp = std::shared_ptr<FrameData>;
@@ -99,17 +105,25 @@ class Fast_DQN {
       const std::string& solver_param,
       const int replay_memory_capacity,
       const double gamma,
+      const int unroll,
+      const bool unroll1_is_lstm,
       const bool verbose) :
         environmentSp_(environmentSp),
         legal_actions_(legal_actions),
         solver_param_(solver_param),
         replay_memory_capacity_(replay_memory_capacity),
         gamma_(gamma),
+        unroll_(unroll),
+        unroll1_is_lstm_(unroll1_is_lstm),
         verbose_(verbose),
         random_engine_(0), 
         clone_frequency_(10000), // How often (steps) the target_net_ is updated
         last_clone_iter_(0) {   // Iteration in which the net was last cloned
         }
+
+
+  // Create the caffe net .prototxt
+  caffe::NetParameter CreateNet(bool unroll1_is_lstm);
 
   /**
    * Initialize DQN. Must be called before calling any other method.
@@ -153,8 +167,7 @@ class Fast_DQN {
   using NetSp = boost::shared_ptr<caffe::Net<float>>;
   using BlobSp = boost::shared_ptr<caffe::Blob<float>>;
   using MemoryDataLayerSp = boost::shared_ptr<caffe::MemoryDataLayer<float>>;
-
-
+  
   Environment::ActionVec SelectActions(const InputStateBatch& frames_batch,
                               const double epsilon);
   ActionValue SelectActionGreedily(NetSp net,
@@ -187,7 +200,10 @@ class Fast_DQN {
   const double gamma_;
   std::deque<Transition> replay_memory_;
   TargetLayerInputData dummy_input_data_;
-
+  
+  const int unroll_;
+  const bool unroll1_is_lstm_;
+  
   const std::string solver_param_;
   SolverSp solver_;
   NetSp net_; // The primary network used for action selection.
