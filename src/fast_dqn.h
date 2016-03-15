@@ -8,8 +8,10 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include <set>
 #include <utility>
 #include <deque>
+#include <list>
 #include <string>
 // #include <caffe/layers/memory_data_layer.hpp>
 
@@ -48,7 +50,7 @@ using FilterLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 
 
 typedef struct ActionValue {
-  ActionValue(const Environment::ActionCode _action, const float _q_value) : 
+  ActionValue(const Environment::ActionCode _action, const float _q_value) :
     action(_action), q_value(_q_value) {
     }
   const Environment::ActionCode action;
@@ -70,14 +72,14 @@ class Transition {
       next_frame_ ( next_frame ) {
   }
 
-  bool is_terminal() const { return next_frame_ == nullptr; } 
-  
+  bool is_terminal() const { return next_frame_ == nullptr; }
+
   const State GetNextState() const;
-  
+
   const State& GetState() const { return state_; }
-  
+
   Environment::ActionCode GetAction() const { return action_; }
-  
+
   double GetReward() const { return reward_; }
 
  private:
@@ -87,6 +89,37 @@ class Transition {
     FrameDataSp next_frame_;
 };
 typedef std::shared_ptr<Transition> TransitionSp;
+
+/*
+ * Trajectory class to keep track of each episode
+ */
+class Trajectory {
+
+public:
+  Trajectory () {}
+
+  void AddTransition(const Transition& transition) {
+    //std::cout << "Adding transition to trajectory" << std::endl;
+    transitions_.push_back(transition);
+  }
+
+  const std::deque<Transition> GetTransitions() const {
+    return transitions_;
+  }
+
+  void SetScore(const double score) {
+    score_ = score;
+  }
+
+  const double GetScore() const {
+    return score_;
+  }
+
+private:
+  std::deque<Transition> transitions_;
+  double score_;
+
+};
 
 /**
  * Deep Q-Network
@@ -106,7 +139,7 @@ class Fast_DQN {
         replay_memory_capacity_(replay_memory_capacity),
         gamma_(gamma),
         verbose_(verbose),
-        random_engine_(0), 
+        random_engine_(0),
         clone_frequency_(10000), // How often (steps) the target_net_ is updated
         last_clone_iter_(0) {   // Iteration in which the net was last cloned
         }
@@ -132,16 +165,21 @@ class Fast_DQN {
   void AddTransition(const Transition& transition);
 
   /**
+   * Add a trajectory to replay memory_size
+   */
+  void AddTrajectoryToReplayMemory(const Trajectory& trajectory);
+
+  /**
    * Update DQN using one minibatch
    */
   void Update();
 
-  int memory_size() const { return replay_memory_.size(); }
+  int memory_size() const { return ordered_replay_memory_.size(); }
 
   /**
    * Copy the current training net_ to the target_net_
    */
-    void CloneTrainingNetToTargetNet() { CloneNet(net_); }
+  void CloneTrainingNetToTargetNet() { CloneNet(net_); }
 
   /**
    * Return the current iteration of the solver
@@ -166,7 +204,7 @@ class Fast_DQN {
     * Clone the given net and store the result in clone_net_
     */
   void CloneNet(NetSp net);
-  
+
   /**
    * Init the target and filter layers.
    */
@@ -185,7 +223,8 @@ class Fast_DQN {
   const Environment::ActionVec legal_actions_;
   const int replay_memory_capacity_;
   const double gamma_;
-  std::deque<Transition> replay_memory_;
+  //std::deque<Transition> replay_memory_;
+  std::list<std::pair<TransitionSp, double> > ordered_replay_memory_;
   TargetLayerInputData dummy_input_data_;
 
   const std::string solver_param_;
@@ -195,7 +234,7 @@ class Fast_DQN {
   const int clone_frequency_; // How often (steps) the target_net is updated
   int last_clone_iter_; // Iteration in which the net was last cloned
 
-  
+
   std::mt19937 random_engine_;
   bool verbose_;
 };

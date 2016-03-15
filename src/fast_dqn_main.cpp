@@ -9,7 +9,8 @@
 #include <algorithm>
 
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(gpu, true, "Use GPU to brew Caffe");
+DEFINE_bool(gpu, false, "Use GPU to brew Caffe");
+DEFINE_int32(device, -1, "Which GPU to use");
 DEFINE_bool(gui, false, "Open a GUI window");
 DEFINE_string(rom, "breakout.bin", "Atari 2600 ROM to play");
 DEFINE_string(solver, "models/fast_dqn_solver.prototxt", "Solver parameter"
@@ -18,7 +19,7 @@ DEFINE_int32(memory, 500000, "Capacity of replay memory");
 DEFINE_int32(explore, 1000000, "Number of iterations needed for epsilon"
   "to reach 0.1");
 DEFINE_double(gamma, 0.95, "Discount factor of future rewards (0,1]");
-DEFINE_int32(memory_threshold, 100, "Enough amount of transitions to start "
+DEFINE_int32(memory_threshold, 1000, "Enough amount of transitions to start "
   "learning");
 DEFINE_int32(skip_frame, 3, "Number of frames skipped");
 DEFINE_bool(show_frame, false, "Show the current frame in CUI");
@@ -48,6 +49,7 @@ double PlayOneEpisode(
     const bool update) {
   assert(!environmentSp->EpisodeOver());
   std::deque<fast_dqn::FrameDataSp> past_frames;
+  fast_dqn::Trajectory trajectory;
   auto total_score = 0.0;
   for (auto frame = 0; !environmentSp->EpisodeOver(); ++frame) {
     if (FLAGS_verbose)
@@ -87,7 +89,8 @@ double PlayOneEpisode(
                 action,
                 reward,
                 environmentSp->PreprocessScreen());
-        dqn->AddTransition(transition);
+        //dqn->AddTransition(transition);
+        trajectory.AddTransition(transition);
         // If the size of replay memory is enough, update DQN
         if (dqn->memory_size() > FLAGS_memory_threshold) {
           dqn->Update();
@@ -95,6 +98,8 @@ double PlayOneEpisode(
       }
     }
   }
+  trajectory.SetScore(total_score);
+  dqn->AddTrajectoryToReplayMemory(trajectory);
   environmentSp->Reset();
   return total_score;
 }
@@ -107,6 +112,9 @@ int main(int argc, char** argv) {
 
   if (FLAGS_gpu) {
     caffe::Caffe::set_mode(caffe::Caffe::GPU);
+    if (FLAGS_device >= 0) {
+      caffe::Caffe::SetDevice(FLAGS_device);
+    }
   } else {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
@@ -115,10 +123,10 @@ int main(int argc, char** argv) {
     fast_dqn::CreateEnvironment(FLAGS_gui, FLAGS_rom);
 
   // Get the vector of legal actions
-  const fast_dqn::Environment::ActionVec legal_actions = 
+  const fast_dqn::Environment::ActionVec legal_actions =
     environmentSp->GetMinimalActionSet();
 
-  fast_dqn::Fast_DQN dqn(environmentSp, legal_actions, FLAGS_solver, 
+  fast_dqn::Fast_DQN dqn(environmentSp, legal_actions, FLAGS_solver,
                          FLAGS_memory, FLAGS_gamma, FLAGS_verbose);
 
   dqn.Initialize();
@@ -177,7 +185,7 @@ int main(int argc, char** argv) {
       running_average = train_score*plot_average_discount
         + running_average*(1.0-plot_average_discount);
 
-    if (dqn.current_iteration() >= next_epoch_boundry) {   
+    if (dqn.current_iteration() >= next_epoch_boundry) {
       double hours =  total_time / 1000. / 3600.;
       int epoc_number = static_cast<int>(
         (next_epoch_boundry)/FLAGS_steps_per_epoch);
@@ -207,4 +215,3 @@ int main(int argc, char** argv) {
 
   training_data.close();
 }
-

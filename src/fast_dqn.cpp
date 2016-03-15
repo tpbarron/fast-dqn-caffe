@@ -104,7 +104,7 @@ void Fast_DQN::Initialize() {
 }
 
 
-Environment::ActionCode Fast_DQN::SelectAction(const State& frames, 
+Environment::ActionCode Fast_DQN::SelectAction(const State& frames,
                                                const double epsilon) {
   return SelectActions(InputStateBatch{{frames}}, epsilon)[0];
 }
@@ -191,11 +191,38 @@ std::vector<ActionValue> Fast_DQN::SelectActionGreedily(
   return results;
 }
 
-void Fast_DQN::AddTransition(const Transition& transition) {
+/*void Fast_DQN::AddTransition(const Transition& transition) {
   if (replay_memory_.size() == replay_memory_capacity_) {
     replay_memory_.pop_front();
   }
   replay_memory_.push_back(transition);
+}*/
+
+/*
+ * Add the Transitions from the Trajectory to the replay memory with their
+ * position based on the score. Then the replay memory
+ */
+void Fast_DQN::AddTrajectoryToReplayMemory(const Trajectory& trajectory) {
+  double score = trajectory.GetScore();
+  std::list<std::pair<TransitionSp, double>>::iterator insert_point = ordered_replay_memory_.begin();
+  for (auto itr = ordered_replay_memory_.begin();
+       itr != ordered_replay_memory_.end();
+       ++itr) {
+    const std::pair<TransitionSp, double> p = *itr;
+    if (score >= p.second) {
+      insert_point = itr;
+      break;
+    }
+  }
+  for (const Transition t : trajectory.GetTransitions()) {
+    auto pair = std::make_pair(std::make_shared<Transition>(t), score);
+    ordered_replay_memory_.insert(insert_point, pair);
+  }
+
+  // check that replay memory is correct size
+  while (ordered_replay_memory_.size() > replay_memory_capacity_) {
+    ordered_replay_memory_.pop_back();
+  }
 }
 
 void Fast_DQN::Update() {
@@ -209,28 +236,53 @@ void Fast_DQN::Update() {
     last_clone_iter_ = current_iteration();
   }
 
-  // Sample transitions from replay memory
-  std::vector<int> transitions;
-  transitions.reserve(kMinibatchSize);
-  for (auto i = 0; i < kMinibatchSize; ++i) {
-    const auto random_transition_idx =
-        std::uniform_int_distribution<int>(0, replay_memory_.size() - 1)(
-            random_engine_);
-    transitions.push_back(random_transition_idx);
+  // Sample transitions from replay memory by Gaussian distribution
+  std::set<int> transitions_indices_set;
+  // choose standard deviation such that 99% of samples fall within replay
+  //   memory size
+  std::mt19937 gen(random_engine_);
+  double stdev = ordered_replay_memory_.size() / 3.0;
+  double mean = 0.0;
+  std::normal_distribution<> d(mean, stdev);
+  // Get kMinibatchSize samples, need to check since possible to get random
+  // ids outside range
+  while (transitions_indices_set.size() < kMinibatchSize) {
+    int random_idx = static_cast<int>(std::round(std::abs(d(gen))));
+    if (random_idx < ordered_replay_memory_.size()) {
+      transitions_indices_set.insert(random_idx);
+    }
   }
+  // sort the transition ids so we can get them out with one pass of the
+  // replay memory
+  std::vector<int> transitions_indices(transitions_indices_set.begin(),
+    transitions_indices_set.end());
+  std::sort(transitions_indices.begin(), transitions_indices.end());
+
+  // Get transitions for easy look up
+  std::vector<TransitionSp> transitions;
+  transitions.reserve(kMinibatchSize);
 
   // Compute target values: max_a Q(s',a)
   std::vector<State> target_last_frames_batch;
-  for (const auto idx : transitions) {
-    const auto& transition = replay_memory_[idx];
-    if (transition.is_terminal()) {
-      continue;
+  int transition_seek = 0;
+  int replay_index = 0;
+  auto replay_itr = ordered_replay_memory_.begin();
+  while (transition_seek != transitions_indices.size()) {
+    if (replay_index == transitions_indices[transition_seek]) {
+      // found transition, look for next one
+      ++transition_seek;
+      TransitionSp transition = replay_itr->first; //memory_[idx];
+      transitions.push_back(transition); //[transition_seek] = transition;
+      if (transition->is_terminal()) {
+        continue;
+      }
+      target_last_frames_batch.push_back(transition->GetNextState());
     }
-
-    target_last_frames_batch.push_back(transition.GetNextState());
+    ++replay_index;
+    ++replay_itr;
   }
 
-    // Get the next state QValues
+  // Get the next state QValues
   const auto actions_and_values =
       SelectActionGreedily(target_net_, target_last_frames_batch);
 
@@ -241,21 +293,21 @@ void Fast_DQN::Update() {
   std::fill(filter_input.begin(), filter_input.end(), 0.0f);
   auto target_value_idx = 0;
   for (auto i = 0; i < kMinibatchSize; ++i) {
-    const auto& transition = replay_memory_[transitions[i]];
-    const auto action = transition.GetAction();
-    const auto reward = transition.GetReward();
+    const auto& transition = transitions[i];
+    const auto action = transition->GetAction();
+    const auto reward = transition->GetReward();
     assert(reward >= -1.0 && reward <= 1.0);
-    const auto target = transition.is_terminal() ?
+    const auto target = transition->is_terminal() ?
           reward :
           reward + gamma_ * actions_and_values[target_value_idx++].q_value;
     assert(!std::isnan(target));
     target_input[i * kOutputCount + static_cast<int>(action)] = target;
     filter_input[i * kOutputCount + static_cast<int>(action)] = 1;
     if (verbose_)
-      VLOG(1) << "filter:" << environmentSp_->action_to_string(action) 
+      VLOG(1) << "filter:" << environmentSp_->action_to_string(action)
         << " target:" << target;
     for (auto j = 0; j < kInputFrameCount; ++j) {
-      const State& state = transition.GetState();
+      const State& state = transition->GetState();
       const auto& frame_data = state[j];
       std::copy(
           frame_data->begin(),
@@ -341,4 +393,3 @@ void Fast_DQN::InputDataIntoLayers(NetSp net,
 }
 
 }  // namespace fast_dqn
-
