@@ -204,25 +204,28 @@ std::vector<ActionValue> Fast_DQN::SelectActionGreedily(
  */
 void Fast_DQN::AddTrajectoryToReplayMemory(const Trajectory& trajectory) {
   double score = trajectory.GetScore();
-  std::list<std::pair<TransitionSp, double>>::iterator insert_point = ordered_replay_memory_.begin();
-  for (auto itr = ordered_replay_memory_.begin();
-       itr != ordered_replay_memory_.end();
-       ++itr) {
-    const std::pair<TransitionSp, double> p = *itr;
-    if (score >= p.second) {
-      insert_point = itr;
-      break;
-    }
-  }
-  for (const Transition t : trajectory.GetTransitions()) {
-    auto pair = std::make_pair(std::make_shared<Transition>(t), score);
-    ordered_replay_memory_.insert(insert_point, pair);
+
+  std::make_heap(ordered_replay_memory_.begin(),
+                 ordered_replay_memory_.end(),
+                 transition_comp());
+  for (Transition t : trajectory.GetTransitions()) {
+    t.SetTrajectoryReward(score);
+    auto transitionSp = std::make_shared<Transition>(t);
+    ordered_replay_memory_.push_back(transitionSp);
+    std::push_heap(ordered_replay_memory_.begin(),
+                   ordered_replay_memory_.end(),
+                 transition_comp());
   }
 
+  std::sort_heap(ordered_replay_memory_.begin(),
+                 ordered_replay_memory_.end(),
+                 transition_comp());
   // check that replay memory is correct size
   while (ordered_replay_memory_.size() > replay_memory_capacity_) {
     ordered_replay_memory_.pop_back();
   }
+
+  //std::make_heap(ordered_replay_memory_.begin(), ordered_replay_memory_.end());
 }
 
 void Fast_DQN::Update() {
@@ -252,34 +255,19 @@ void Fast_DQN::Update() {
       transitions_indices_set.insert(random_idx);
     }
   }
-  // sort the transition ids so we can get them out with one pass of the
-  // replay memory
-  std::vector<int> transitions_indices(transitions_indices_set.begin(),
-    transitions_indices_set.end());
-  std::sort(transitions_indices.begin(), transitions_indices.end());
 
-  // Get transitions for easy look up
-  std::vector<TransitionSp> transitions;
-  transitions.reserve(kMinibatchSize);
+  // Copy set to vector
+  std::vector<int> transitions_indices(transitions_indices_set.begin(),
+                                       transitions_indices_set.end());
 
   // Compute target values: max_a Q(s',a)
   std::vector<State> target_last_frames_batch;
-  int transition_seek = 0;
-  int replay_index = 0;
-  auto replay_itr = ordered_replay_memory_.begin();
-  while (transition_seek != transitions_indices.size()) {
-    if (replay_index == transitions_indices[transition_seek]) {
-      // found transition, look for next one
-      ++transition_seek;
-      TransitionSp transition = replay_itr->first; //memory_[idx];
-      transitions.push_back(transition); //[transition_seek] = transition;
-      if (transition->is_terminal()) {
-        continue;
-      }
-      target_last_frames_batch.push_back(transition->GetNextState());
+  for (const auto idx : transitions_indices) {
+    const auto& transition = ordered_replay_memory_[idx];
+    if (transition->is_terminal()) {
+      continue;
     }
-    ++replay_index;
-    ++replay_itr;
+    target_last_frames_batch.push_back(transition->GetNextState());
   }
 
   // Get the next state QValues
@@ -293,7 +281,7 @@ void Fast_DQN::Update() {
   std::fill(filter_input.begin(), filter_input.end(), 0.0f);
   auto target_value_idx = 0;
   for (auto i = 0; i < kMinibatchSize; ++i) {
-    const auto& transition = transitions[i];
+    const auto& transition = ordered_replay_memory_[transitions_indices[i]];
     const auto action = transition->GetAction();
     const auto reward = transition->GetReward();
     assert(reward >= -1.0 && reward <= 1.0);

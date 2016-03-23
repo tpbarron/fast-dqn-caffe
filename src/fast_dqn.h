@@ -82,10 +82,15 @@ class Transition {
 
   double GetReward() const { return reward_; }
 
+  void SetTrajectoryReward(double reward) { trajectory_reward_ = reward; }
+
+  double GetTrajectoryReward() const { return trajectory_reward_; }
+
  private:
     const State state_;
     Environment::ActionCode action_;
     double reward_;
+    double trajectory_reward_;
     FrameDataSp next_frame_;
 };
 typedef std::shared_ptr<Transition> TransitionSp;
@@ -219,12 +224,31 @@ class Fast_DQN {
       const TargetLayerInputData& target_data,
       const FilterLayerInputData& filter_data);
 
+  struct transition_comp {
+    bool operator() (const TransitionSp lhs, const TransitionSp rhs) const {
+      // if lhs traj is better or eq to rhs traj
+      if (lhs->GetTrajectoryReward() >= rhs->GetTrajectoryReward()) {
+        // if this trans is better for lhs
+        if (lhs->GetReward() > rhs->GetReward()) {
+          // then it is first
+          return true;
+        } else {
+          // else rhs is first
+          return false;
+        }
+      }
+      // if rhs is better traj then it is first regardless of trans score
+      return false;
+    }
+  };
+
   EnvironmentSp environmentSp_;
   const Environment::ActionVec legal_actions_;
   const int replay_memory_capacity_;
   const double gamma_;
   //std::deque<Transition> replay_memory_;
-  std::list<std::pair<TransitionSp, double> > ordered_replay_memory_;
+  //std::list<std::pair<TransitionSp, double> > ordered_replay_memory_;
+  std::vector<TransitionSp> ordered_replay_memory_;
   TargetLayerInputData dummy_input_data_;
 
   const std::string solver_param_;
