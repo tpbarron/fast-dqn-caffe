@@ -14,8 +14,11 @@ typedef std::shared_ptr<Environment> EnvironmentSp;
 
 class Environment {
  public:
-  typedef std::vector<int> ActionVec;
-  typedef int ActionCode;
+ 
+  static constexpr auto kNumActionParams = 5;
+  using ActionList = std::array<double, kNumActionParams>;
+  typedef std::vector<ActionList> ActionVec;
+  //typedef int ActionCode;
 
   static constexpr auto kRawFrameHeight = 250;
   static constexpr auto kRawFrameWidth = 160;
@@ -34,15 +37,15 @@ class Environment {
 
   virtual double ActNoop() = 0;
 
-  virtual double Act(int action) = 0;
+  virtual double Act(ActionList action) = 0;
 
   virtual void Reset() = 0;
 
   virtual bool EpisodeOver() = 0;
 
-  virtual std::string action_to_string(ActionCode a) = 0;
+  virtual std::string action_to_string(ActionList a) = 0;
 
-  virtual const ActionVec& GetMinimalActionSet() = 0;
+  //virtual const ActionVec& GetMinimalActionSet() = 0;
 
 };
 

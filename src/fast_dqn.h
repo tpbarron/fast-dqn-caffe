@@ -48,10 +48,10 @@ using FilterLayerInputData = std::array<float, kMinibatchSize * kOutputCount>;
 
 
 typedef struct ActionValue {
-  ActionValue(const Environment::ActionCode _action, const float _q_value) : 
+  ActionValue(const Environment::ActionList _action, const float _q_value) : 
     action(_action), q_value(_q_value) {
     }
-  const Environment::ActionCode action;
+  const Environment::ActionList action;
   const float q_value;
 } ActionValue;
 
@@ -62,7 +62,7 @@ typedef struct ActionValue {
 class Transition {
  public:
 
-  Transition ( const State state, Environment::ActionCode action,
+  Transition ( const State state, Environment::ActionList action,
                 double reward, FrameDataSp next_frame ) :
       state_ ( state ),
       action_ ( action ),
@@ -78,13 +78,13 @@ class Transition {
 
   const FrameDataSp& GetFrame() const { return next_frame_; }
   
-  Environment::ActionCode GetAction() const { return action_; }
+  Environment::ActionList GetAction() const { return action_; }
   
   double GetReward() const { return reward_; }
 
  private:
     const State state_;
-    Environment::ActionCode action_;
+    Environment::ActionList action_;
     double reward_;
     FrameDataSp next_frame_;
 };
@@ -97,13 +97,13 @@ class Fast_DQN {
  public:
   Fast_DQN(
       EnvironmentSp environmentSp,
-      const Environment::ActionVec& legal_actions,
+      //const Environment::ActionVec& legal_actions,
       const std::string& solver_param,
       const int replay_memory_capacity,
       const double gamma,
       const bool verbose) :
         environmentSp_(environmentSp),
-        legal_actions_(legal_actions),
+        //legal_actions_(legal_actions),
         solver_param_(solver_param),
         replay_memory_capacity_(replay_memory_capacity),
         gamma_(gamma),
@@ -126,7 +126,7 @@ class Fast_DQN {
   /**
    * Select an action by epsilon-greedy.
    */
-  Environment::ActionCode SelectAction(const State& input_frames, double epsilon);
+  Environment::ActionList SelectAction(const State& input_frames, double epsilon);
 
   /**
    * Add a transition to replay memory

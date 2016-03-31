@@ -111,7 +111,7 @@ void Fast_DQN::Initialize() {
 }
 
 
-Environment::ActionCode Fast_DQN::SelectAction(const State& frames, 
+Environment::ActionList Fast_DQN::SelectAction(const State& frames, 
                                                const double epsilon) {
   return SelectActions(InputStateBatch{{frames}}, epsilon)[0];
 }
@@ -173,27 +173,38 @@ std::vector<ActionValue> Fast_DQN::SelectActionGreedily(
   const auto q_values_blob = net->blob_by_name(q_values_blob_name);
   for (auto i = 0; i < last_frames_batch.size(); ++i) {
     // Get the Q values from the net
-    const auto action_evaluator = [&](Environment::ActionCode action) {
-      const auto q = q_values_blob->data_at(i, static_cast<int>(action), 0, 0);
-      assert(!std::isnan(q));
-      return q;
-    };
-    std::vector<float> q_values(legal_actions_.size());
-    std::transform(
-        legal_actions_.begin(),
-        legal_actions_.end(),
-        q_values.begin(),
-        action_evaluator);
+    
+    //const auto action_evaluator = [&](Environment::ActionList action) {
+    //  const auto q = q_values_blob->data_at(i, static_cast<int>(action), 0, 0);
+    //  assert(!std::isnan(q));
+    //  return q;
+    //};
+    
+    //std::vector<float> q_values(legal_actions_.size());
+    
+    //std::transform(
+    //    legal_actions_.begin(),
+    //    legal_actions_.end(),
+    //    q_values.begin(),
+    //    action_evaluator);
 //     if (last_frames_batch.size() == 1) {
 //       std::cout << PrintQValues(environmentSp_, q_values, legal_actions_);
 //     }
 
+    Environment::ActionList action;
+    for (auto a = 0; a < Environment::kNumActionParams; ++a) {
+      const auto v = q_values_blob->data_at(i, a, 0, 0);
+      assert(!std::isnan(v));
+      action[a] = v;
+    }
+
     // Select the action with the maximum Q value
-    const auto max_idx =
-        std::distance(
-            q_values.begin(),
-            std::max_element(q_values.begin(), q_values.end()));
-    results.emplace_back(legal_actions_[max_idx], q_values[max_idx]);
+    //const auto max_idx =
+    //    std::distance(
+    //        q_values.begin(),
+    //        std::max_element(q_values.begin(), q_values.end()));
+    //results.emplace_back(legal_actions_[max_idx], q_values[max_idx]);
+    results.emplace_back(action, 0);
   }
   return results;
 }
@@ -254,10 +265,14 @@ void Fast_DQN::Update() {
     assert(reward >= -1.0 && reward <= 1.0);
     const auto target = transition.is_terminal() ?
           reward :
-          reward + gamma_ * actions_and_values[target_value_idx++].q_value;
+          reward + gamma_ * replay_memory_[transitions[i]+1].GetReward(); //actions_and_values[target_value_idx++].q_value;
     assert(!std::isnan(target));
-    target_input[i * kOutputCount + static_cast<int>(action)] = target;
-    filter_input[i * kOutputCount + static_cast<int>(action)] = 1;
+    
+    for (auto a = 0; a < Environment::kNumActionParams; ++a) {
+      target_input[i * kOutputCount + a] = target; //static_cast<int>(action)] = target;
+      filter_input[i * kOutputCount + a] = 1; //static_cast<int>(action)] = 1;
+    }
+    
     if (verbose_)
       VLOG(1) << "filter:" << environmentSp_->action_to_string(action) 
         << " target:" << target;

@@ -15,11 +15,11 @@ public:
     // init the python game
     me_.init(evaluate);
     
-    ActionVec av = me_.get_action_set();
-    for (int i=0; i < av.size(); i++) {
-      legal_actions_.push_back(av[i]);
-      std::cout << "action[" << i << "] = " << av[i] << std::endl;
-    }
+    //ActionVec av = me_.get_action_set();
+    //for (int i=0; i < av.size(); i++) {
+    //  legal_actions_.push_back(av[i]);
+    //  std::cout << "action[" << i << "] = " << av[i] << std::endl;
+    //}
   }
 
 
@@ -73,16 +73,17 @@ public:
    */
   double ActNoop() {
     double reward = 0;
+    ActionList noop = {0.0, 0.0, 0.0, 0.0, 0.0};
     for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
       //std::cout << "actnoop, i = " << i << std::endl;
       // TODO: Should this be an int or some type of action object?
       // Temporarility 0 will always be No-op
-      reward += me_.act(0);
+      reward += me_.act(noop);
     }
     return reward;
   }
 
-  double Act(int action) {
+  double Act(ActionList action) {
     double reward = 0;
     for (auto i = 0; i < kInputFrameCount && !me_.is_game_over(); ++i) {
       // TODO: action type?
@@ -100,18 +101,22 @@ public:
     return me_.is_game_over(); 
   }
 
-  std::string action_to_string(Environment::ActionCode a) {
-    return "print action: " + std::to_string(a);
+  std::string action_to_string(Environment::ActionList a) {
+    std::string ret = "";
+    for (auto i = 0; i < kNumActionParams; ++i) {
+      ret += std::to_string(a[i]) + " ";
+    }
+    return ret;
     //return action_to_string(static_cast<Action>(a)); 
   }
 
-  const ActionVec& GetMinimalActionSet() {
-    return legal_actions_;
-  }
+  //const ActionVec& GetMinimalActionSet() {
+  //  return legal_actions_;
+  //}
 
  private:
 
-  MinecraftInterface me_;
+  minecraft_interface::MinecraftInterface me_;
   ActionVec legal_actions_;
   
 };

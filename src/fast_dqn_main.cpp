@@ -128,10 +128,10 @@ int main(int argc, char** argv) {
   fast_dqn::CreateEnvironment(argc, argv, "dependencies/minecraft_dqn_interface/", FLAGS_evaluate);
 
   // Get the vector of legal actions
-  const fast_dqn::Environment::ActionVec legal_actions = 
-    environmentSp->GetMinimalActionSet();
+  //const fast_dqn::Environment::ActionVec legal_actions = 
+  //  environmentSp->GetMinimalActionSet();
 
-  fast_dqn::Fast_DQN dqn(environmentSp, legal_actions, FLAGS_solver, 
+  fast_dqn::Fast_DQN dqn(environmentSp, FLAGS_solver, 
                          FLAGS_memory, FLAGS_gamma, FLAGS_verbose);
 
   dqn.Initialize();
